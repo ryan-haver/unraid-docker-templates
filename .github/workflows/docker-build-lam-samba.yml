@@ -14,8 +14,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ryan-haver/samba-ad-lam
   PLATFORMS: linux/amd64,linux/arm64
+  DOCKERFILE_PATH: ./LAM_Samba-AD
 
 jobs:
   build-and-push:
@@ -58,7 +59,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ${{ env.DOCKERFILE_PATH }}
+          file: ${{ env.DOCKERFILE_PATH }}/Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
