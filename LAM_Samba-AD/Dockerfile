@@ -48,15 +48,15 @@ RUN apt-get update && \
 
 # Download and install LAM from official SourceForge (most reliable source)
 # LAM releases are available on SourceForge with stable naming
-RUN wget -O /tmp/lam.tar.gz \
+RUN wget -O /tmp/lam.tar.bz2 \
     "https://downloads.sourceforge.net/project/lam/LAM/stable/ldap-account-manager-stable.tar.bz2" && \
     mkdir -p /var/www/html && \
-    tar -xjf /tmp/lam.tar.gz -C /var/www/html && \
+    tar -xjf /tmp/lam.tar.bz2 -C /var/www/html && \
     EXTRACTED_DIR=$(ls -d /var/www/html/ldap-account-manager-* 2>/dev/null | head -1) && \
     mv "$EXTRACTED_DIR" /var/www/html/lam && \
     chown -R www-data:www-data /var/www/html/lam && \
     chmod -R 755 /var/www/html/lam && \
-    rm /tmp/lam.tar.gz
+    rm /tmp/lam.tar.bz2
 
 # Create LAM config directory with proper permissions
 RUN mkdir -p /var/lib/lam/config /var/lib/lam/sess && \
