@@ -47,13 +47,18 @@ RUN apt-get update && \
     rm -fr /tmp/* /var/tmp/*
 
 # Download and install latest stable LAM release
+# Note: LAM releases use format like "9.0" (not "v9.0")
 RUN LAM_LATEST=$(curl -s https://api.github.com/repos/LDAPAccountManager/lam/releases/latest | jq -r '.tag_name') && \
     echo "Installing LAM version: $LAM_LATEST" && \
-    wget -O /tmp/lam.tar.gz \
-    "https://github.com/LDAPAccountManager/lam/releases/download/${LAM_LATEST}/ldap-account-manager-${LAM_LATEST}.tar.gz" && \
+    wget --verbose -O /tmp/lam.tar.gz \
+    "https://github.com/LDAPAccountManager/lam/releases/download/${LAM_LATEST}/ldap-account-manager-${LAM_LATEST}.tar.gz" || \
+    (echo "Failed to download LAM ${LAM_LATEST}, trying stable tag..." && \
+    wget --verbose -O /tmp/lam.tar.gz \
+    "https://github.com/LDAPAccountManager/lam/releases/download/stable/ldap-account-manager-stable.tar.gz") && \
     mkdir -p /var/www/html && \
     tar -xzf /tmp/lam.tar.gz -C /var/www/html && \
-    mv /var/www/html/ldap-account-manager-${LAM_LATEST} /var/www/html/lam && \
+    EXTRACTED_DIR=$(ls -d /var/www/html/ldap-account-manager-* 2>/dev/null | head -1) && \
+    mv "$EXTRACTED_DIR" /var/www/html/lam && \
     chown -R www-data:www-data /var/www/html/lam && \
     chmod -R 755 /var/www/html/lam && \
     rm /tmp/lam.tar.gz
