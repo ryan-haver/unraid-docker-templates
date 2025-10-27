@@ -46,10 +46,10 @@ RUN apt-get update && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
     rm -fr /tmp/* /var/tmp/*
 
-# Download and install LAM from official SourceForge (most reliable source)
-# LAM releases are available on SourceForge with stable naming
-RUN wget -O /tmp/lam.tar.bz2 \
-    "https://downloads.sourceforge.net/project/lam/LAM/stable/ldap-account-manager-stable.tar.bz2" && \
+# Download and install LAM from official SourceForge
+# Using direct mirror link for reliable downloads
+RUN wget --content-disposition -O /tmp/lam.tar.bz2 \
+    "https://sourceforge.net/projects/lam/files/LAM/9.0/ldap-account-manager-9.0.tar.bz2/download" && \
     mkdir -p /var/www/html && \
     tar -xjf /tmp/lam.tar.bz2 -C /var/www/html && \
     EXTRACTED_DIR=$(ls -d /var/www/html/ldap-account-manager-* 2>/dev/null | head -1) && \
