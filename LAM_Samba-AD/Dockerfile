@@ -29,6 +29,7 @@ RUN apt-get update && \
         curl \
         dnsutils \
         ntp \
+        jq \
         # NEW: LAM Web Interface dependencies
         nginx \
         php8.1-fpm \
@@ -46,7 +47,7 @@ RUN apt-get update && \
     rm -fr /tmp/* /var/tmp/*
 
 # Download and install latest stable LAM release
-RUN LAM_LATEST=$(curl -s https://api.github.com/repos/LDAPAccountManager/lam/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
+RUN LAM_LATEST=$(curl -s https://api.github.com/repos/LDAPAccountManager/lam/releases/latest | jq -r '.tag_name') && \
     echo "Installing LAM version: $LAM_LATEST" && \
     wget -O /tmp/lam.tar.gz \
     "https://github.com/LDAPAccountManager/lam/releases/download/${LAM_LATEST}/ldap-account-manager-${LAM_LATEST}.tar.gz" && \
