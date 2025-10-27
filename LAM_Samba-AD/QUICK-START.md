@@ -11,10 +11,10 @@
 ### Step 1: Build Image (5 minutes)
 ```bash
 cd C:\scripts\unraid-templates\LAM_Samba-AD
-docker build -t ghcr.io/yourusername/samba-ad-lam:latest .
+docker build -t ghcr.io/ryan-haver/samba-ad-lam:latest .
 
 # OR just pull from GitHub Container Registry (if already set up):
-docker pull ghcr.io/yourusername/samba-ad-lam:latest
+docker pull ghcr.io/ryan-haver/samba-ad-lam:latest
 ```
 
 ### Step 2: Deploy Template to Unraid (1 minute)
@@ -70,7 +70,7 @@ docker logs samba-ad-lam
 ### Pull from GitHub Container Registry
 ```bash
 # Pull the image (free, no authentication needed for public repos!)
-docker pull ghcr.io/yourusername/samba-ad-lam:latest
+docker pull ghcr.io/ryan-haver/samba-ad-lam:latest
 
 # Or use LAM web interface at http://192.168.1.200:8080
 ```

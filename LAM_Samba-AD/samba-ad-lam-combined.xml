@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>Samba-AD-LAM</Name>
-  <Repository>ghcr.io/yourusername/samba-ad-lam</Repository>
-  <Registry>https://github.com/yourusername/samba-ad-lam/pkgs/container/samba-ad-lam</Registry>
+  <Repository>ghcr.io/ryan-haver/samba-ad-lam</Repository>
+  <Registry>https://github.com/ryan-haver/unraid-docker-templates/pkgs/container/samba-ad-lam</Registry>
   <Network>Custom: macvlan-bridge</Network>
   <MyIP/>
   <Shell>bash</Shell>
   <Privileged>true</Privileged>
-  <Support>https://github.com/your-repo/samba-ad-lam</Support>
+  <Support>https://github.com/ryan-haver/unraid-docker-templates</Support>
   <Project>https://www.ldap-account-manager.org/</Project>
   <Overview>**COMBINED SAMBA AD DC + LAM CONTAINER**
 

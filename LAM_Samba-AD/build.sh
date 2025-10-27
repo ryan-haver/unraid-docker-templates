@@ -10,7 +10,7 @@
 set -e
 
 # Configuration
-IMAGE_NAME="yourusername/samba-ad-lam"
+IMAGE_NAME="ryan-haver/samba-ad-lam"
 DEFAULT_TAG="latest"
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")

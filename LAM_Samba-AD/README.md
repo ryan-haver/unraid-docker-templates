@@ -66,21 +66,21 @@ For production deployments, use separate containers for better:
 
 ```bash
 # Pull from GitHub (no Docker Hub account needed!)
-docker pull ghcr.io/yourusername/samba-ad-lam:latest
+docker pull ghcr.io/ryan-haver/samba-ad-lam:latest
 ```
 
 **Option 2: Build from GitHub**
 
 ```bash
 # Build directly from GitHub (no git clone needed!)
-docker build -t samba-ad-lam https://github.com/yourusername/samba-ad-lam.git
+docker build -t samba-ad-lam https://github.com/ryan-haver/unraid-docker-templates.git#main:LAM_Samba-AD
 ```
 
 **Option 3: Build Locally**
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/samba-ad-lam.git
+git clone https://github.com/ryan-haver/unraid-docker-templates.git
 cd samba-ad-lam
 
 # Build image
@@ -122,7 +122,7 @@ docker run -d \
   -v /mnt/user/appdata/samba-ad-lam/data:/var/lib/samba \
   -v /mnt/user/appdata/samba-ad-lam/config:/etc/samba/external \
   -v /mnt/user/appdata/samba-ad-lam/lam-config:/var/lib/lam/config \
-  yourusername/samba-ad-lam:latest
+  ryan-haver/samba-ad-lam:latest
 ```
 
 ### Required Configuration Variables
@@ -349,7 +349,7 @@ For production use, deploy **separate containers**:
 
 ```bash
 # Pull new image
-docker pull yourusername/samba-ad-lam:latest
+docker pull ryan-haver/samba-ad-lam:latest
 
 # Stop and remove old container
 docker stop samba-ad-lam
