@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>LAM</Name>
+  <Repository>ghcr.io/ldapaccountmanager/lam:stable</Repository>
+  <Registry>https://github.com/LDAPAccountManager/docker/pkgs/container/lam</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://forums.unraid.net/</Support>
+  <Project>https://www.ldap-account-manager.org/</Project>
+  <Overview>LDAP Account Manager (LAM) is a web-based LDAP management interface that simplifies administration of users, groups, and other LDAP entries. It provides an intuitive web interface for managing LDAP directories without requiring detailed knowledge of LDAP syntax.
+
+Key Features:
+- User and group management
+- Multiple LDAP account types support (Unix, Samba, etc.)
+- PDF export functionality
+- Multi-language support
+- Template-based account creation
+- Integrated LDAP browser
+- Self-service capabilities
+
+IMPORTANT - First-Time Setup:
+LAM requires configuration files to exist before it can start. Choose ONE of these two methods:
+
+**OPTION 1 - Automatic Setup (Easiest - Recommended for Beginners):**
+In the "Config Directory" field below, DELETE the default path and type exactly: lam-config
+(Just those 10 characters, nothing else - no slashes, no /mnt/user path)
+This tells Docker to automatically create and manage the config files for you. No commands to run!
+Your settings will be saved and persist across container updates/restarts.
+NOTE: Config files will be stored in Docker's storage area, not directly accessible from Unraid's file browser.
+
+**OPTION 2 - Manual Setup (Advanced - Only if you need to edit files directly on your Unraid server):**
+Before clicking "Apply" to create this container, open the Unraid terminal and paste this entire command:
+
+docker run --rm -v /mnt/user/appdata/lam:/data ghcr.io/ldapaccountmanager/lam:stable sh -c "cp -r /var/lib/ldap-account-manager/config/* /data/ &amp;&amp; chown -R 99:100 /data &amp;&amp; chmod -R 775 /data"
+
+Press Enter and wait for it to finish. This copies the config files to /mnt/user/appdata/lam/ where you can access them.
+Then come back here and create the container normally.
+Your settings will be saved in /mnt/user/appdata/lam/ and you can edit them directly via SMB/network share.
+
+If you're not sure which to use, choose Option 1 (just type "lam-config" in the Config Directory field).
+
+Security Notes:
+- Change the default LAM_PASSWORD immediately after installation
+- Ensure your LDAP server uses proper authentication
+- Consider using LDAPS (secure LDAP) connections
+- Restrict network access to trusted sources
+
+Quick Start Guide:
+1. Choose your setup method above (Option 1 is easiest!)
+2. If using Option 1: Change "Config Directory" field to just: lam-config
+3. If using Option 2: Run the command in Unraid terminal first
+4. Set "LAM Master Password" to something secure (not "lam"!)
+5. Enter your LDAP Server URL (example: ldap://192.168.1.100:389)
+6. Enter your LDAP Domain (example: mydomain.com)
+7. Click "Apply" to create the container
+8. Access LAM at http://your-unraid-ip:8080/
+9. Login with username: admin and the password you set in step 4
+
+For Samba AD DC compatibility, use these DN patterns:
+- Base DN: dc=domain,dc=com
+- Users DN: cn=Users,dc=domain,dc=com
+- Groups DN: cn=Users,dc=domain,dc=com
+
+Documentation: https://www.ldap-account-manager.org/lamcms/documentation</Overview>
+  <Category>Productivity:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/your-repo/unraid-templates/main/LAM.xml</TemplateURL>
+  <Icon>https://www.ldap-account-manager.org/lamcms/sites/default/files/lam_logo.png</Icon>
+  <ExtraParams>--restart=unless-stopped --tmpfs /run/lock --tmpfs /tmp</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>LDAP Account Manager (LAM) is a web-based LDAP management interface that simplifies administration of users, groups, and other LDAP entries.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>8080</HostPort>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/lam/config</HostDir>
+      <ContainerDir>/var/lib/ldap-account-manager/config</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Labels/>
+  <Config Name="WebUI Port" Target="80" Default="8080" Mode="tcp" Description="Port for LAM web interface" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Config Directory" Target="/var/lib/ldap-account-manager/config" Default="/mnt/user/appdata/lam/config" Mode="rw" Description="LAM configuration files directory (matches official docker-compose setup)" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/lam/config</Config>
+  <Config Name="LAM Master Password" Target="LAM_PASSWORD" Default="lam" Mode="" Description="Master password for LAM configuration (CHANGE THIS!)" Type="Variable" Display="always" Required="true" Mask="true">lam</Config>
+  <Config Name="LDAP Server URL" Target="LDAP_SERVER" Default="ldaps://your-ldap-server:636" Mode="" Description="LDAP server URL with port (REQUIRED). Options: ldaps://host:636 (encrypted, recommended) | ldap://host:389 (unencrypted, not recommended) | ldap://host:389 with STARTTLS. Examples: ldaps://192.168.1.100:636 or ldaps://dc.example.com:636" Type="Variable" Display="always" Required="true" Mask="false">ldaps://your-ldap-server:636</Config>
+  <Config Name="LDAP Domain" Target="LDAP_DOMAIN" Default="example.com" Mode="" Description="Your organization's domain name for DN generation" Type="Variable" Display="always" Required="true" Mask="false">example.com</Config>
+  <Config Name="LDAP Base DN" Target="LDAP_BASE_DN" Default="dc=example,dc=com" Mode="" Description="Base Distinguished Name for LDAP searches (Format: dc=domain,dc=com)" Type="Variable" Display="always" Required="false" Mask="false">dc=example,dc=com</Config>
+  <Config Name="LDAP Users DN" Target="LDAP_USERS_DN" Default="cn=Users,dc=example,dc=com" Mode="" Description="Distinguished Name where user accounts are stored (Samba AD DC: cn=Users,dc=domain,dc=com | OpenLDAP: ou=people,dc=domain,dc=com)" Type="Variable" Display="always" Required="false" Mask="false">cn=Users,dc=example,dc=com</Config>
+  <Config Name="LDAP Groups DN" Target="LDAP_GROUPS_DN" Default="cn=Users,dc=example,dc=com" Mode="" Description="Distinguished Name where group accounts are stored (Samba AD DC: cn=Users,dc=domain,dc=com | OpenLDAP: ou=groups,dc=domain,dc=com)" Type="Variable" Display="always" Required="false" Mask="false">cn=Users,dc=example,dc=com</Config>
+  <Config Name="LDAP Admin User" Target="LDAP_USER" Default="cn=admin,dc=example,dc=com" Mode="" Description="LDAP administrator account DN for LAM login" Type="Variable" Display="always" Required="false" Mask="false">cn=admin,dc=example,dc=com</Config>
+  <Config Name="LAM Language" Target="LAM_LANG" Default="en_US" Mode="" Description="Default language for LAM interface (e.g., en_US, de_DE, fr_FR)" Type="Variable" Display="advanced" Required="false" Mask="false">en_US</Config>
+  <Config Name="Skip Preconfiguration" Target="LAM_SKIP_PRECONFIGURE" Default="false" Mode="" Description="Skip automatic LAM configuration (set to true if using external config files)" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Disable TLS Check" Target="LAM_DISABLE_TLS_CHECK" Default="false" Mode="" Description="Disable TLS certificate verification (development only)" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+</Container>

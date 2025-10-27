@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Samba-AD-LAM</Name>
+  <Repository>ghcr.io/yourusername/samba-ad-lam</Repository>
+  <Registry>https://github.com/yourusername/samba-ad-lam/pkgs/container/samba-ad-lam</Registry>
+  <Network>Custom: macvlan-bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>true</Privileged>
+  <Support>https://github.com/your-repo/samba-ad-lam</Support>
+  <Project>https://www.ldap-account-manager.org/</Project>
+  <Overview>**COMBINED SAMBA AD DC + LAM CONTAINER**
+
+This container combines Samba Active Directory Domain Controller with LDAP Account Manager (LAM) in a single unified deployment. Both services run together on the same container for simplified management and testing environments.
+
+**⚠️ TESTING USE CASE ONLY ⚠️**
+This combined approach is designed for lab/testing environments. For production deployments, use separate containers for better isolation and update management.
+
+**WHAT'S INCLUDED:**
+• Samba Active Directory Domain Controller (Ubuntu 22.04 based)
+• LAM Web Interface (port 8080) for LDAP management
+• Nginx web server for LAM
+• PHP-FPM for LAM backend processing
+• NTP time synchronization
+• Supervisord process management
+• All standard AD DC services (DNS, LDAP, Kerberos, SMB)
+
+**MACVLAN PREREQUISITES:**
+• Create MACVLAN network first: Settings → Docker → Custom Networks → Add Network
+• Network Name: macvlan-bridge (or your chosen name)
+• Network Type: macvlan
+• Parent Interface: eth0 (or your network interface)
+• Subnet: 192.168.1.0/24 (match your network)
+• Gateway: 192.168.1.1 (your router IP)
+• IP Range: 192.168.1.200/28 (available IPs for containers)
+
+**NETWORK SETUP REQUIRED:**
+1. Go to Unraid Settings → Docker → Enable Docker: Off
+2. Settings → Network Settings → Create custom network
+3. Configure MACVLAN with your network settings
+4. Turn Docker back on
+5. Container will get its own IP address (no port mapping needed)
+
+**ACCESS POINTS:**
+• Samba AD DC: All standard ports on container IP (53, 88, 135, 389, 445, 636, etc.)
+• LAM Web Interface: http://[CONTAINER-IP]:8080
+• Default LAM credentials: master password set via LAM_PASSWORD variable
+
+**ADVANTAGES:**
+• Single container deployment for testing/lab environments
+• No port conflicts (MACVLAN provides dedicated IP)
+• LAM auto-configured to connect to local Samba AD (ldaps://127.0.0.1:636)
+• Zero network latency between LAM and LDAP (localhost connection)
+• Simplified resource management
+
+**TRADE-OFFS:**
+• Combined updates (both services update together)
+• Shared resource pool (CPU/RAM)
+• Combined logging
+• Not recommended for production environments
+
+**QUICK START:**
+1. Create MACVLAN network (see prerequisites above)
+2. Set Container IP (e.g., 192.168.1.200)
+3. Set Host IP (must match Container IP)
+4. Configure Domain Name (e.g., example.com)
+5. Set Domain Admin Password (strong password!)
+6. Set LAM Master Password (for web interface configuration)
+7. Configure DNS Forwarder (your router IP, e.g., 192.168.1.1)
+8. Click Apply
+9. Wait 2-3 minutes for provisioning
+10. Access LAM at http://[CONTAINER-IP]:8080
+
+**DOCUMENTATION:**
+• Samba AD DC: https://nowsci.com/samba-domain/
+• LAM: https://www.ldap-account-manager.org/lamcms/documentation
+• Container Source: https://github.com/your-repo/samba-ad-lam</Overview>
+  <Category>Network:Management Security:Authentication Productivity:</Category>
+  <WebUI>http://[IP]:8080/</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/unraid/docker-templates/master/templates/icons/samba.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled></DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>MACVLAN NETWORK SETUP REQUIRED:
+
+STEP 1 - CREATE MACVLAN NETWORK:
+Go to: Settings → Docker → Custom Networks → Add Network
+• Network Name: macvlan-bridge
+• Network Type: macvlan
+• Network Driver: macvlan
+• Parent Interface: eth0 (or br0, your main interface)
+• Subnet: 192.168.1.0/24 (match your LAN subnet)
+• Gateway: 192.168.1.1 (your router/gateway IP)
+• IP Range: 192.168.1.200/28 (16 IPs: .200-.215 for containers)
+
+STEP 2 - NETWORK REQUIREMENTS:
+• Available IP addresses in your LAN range
+• Router/switch supporting multiple MACs per port (most modern equipment)
+• No DHCP conflicts with chosen IP range
+• Firewall rules allowing container IP (if applicable)
+
+STEP 3 - CHOOSE CONTAINER IP:
+Select unused IP in your network range (e.g., 192.168.1.200)
+This IP will be dedicated to this container
+Configure HOSTIP environment variable to match this IP
+
+STEP 4 - HOST ACCESS CONFIGURATION (Optional):
+To access container from Unraid host, create route:
+ip route add [CONTAINER_IP]/32 dev [MACVLAN_INTERFACE]
+
+VERIFICATION COMMANDS:
+docker network ls (should show macvlan-bridge)
+docker network inspect macvlan-bridge
+ping [CONTAINER_IP] (from another device)
+
+NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM on its own IP</Requires>
+  
+  <!-- NO PORT MAPPINGS - MACVLAN uses dedicated IP -->
+  <!-- All standard ports (53, 88, 135, 137-139, 389, 445, 464, 636, 3268, 3269) + LAM port 8080 available on container IP -->
+  
+  <!-- MACVLAN NETWORK CONFIGURATION -->
+  <Config Name="Container IP Address" Target="CONTAINER_IP" Default="" Mode="" Description="REQUIRED: Dedicated IP for container (e.g., 192.168.1.200). Must be in MACVLAN network range and not used by other devices. This becomes the container's network identity." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  
+  <!-- ESSENTIAL DOMAIN CONFIGURATION -->
+  <Config Name="Domain Name" Target="DOMAIN" Default="" Mode="" Description="REQUIRED: Domain FQDN (e.g., example.com, CORP.EXAMPLE.COM). Choose carefully - difficult to change later." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Domain Admin Password" Target="DOMAINPASS" Default="" Mode="" Description="REQUIRED: Strong Administrator password for Samba AD. Minimum 12+ characters with complexity. Document securely." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Host IP Address" Target="HOSTIP" Default="" Mode="" Description="REQUIRED: MUST MATCH Container IP Address above. This tells Samba what IP to advertise. Example: 192.168.1.200" Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  
+  <!-- LAM WEB INTERFACE CONFIGURATION -->
+  <Config Name="LAM Master Password" Target="LAM_PASSWORD" Default="lam" Mode="" Description="REQUIRED: Master password for LAM web interface configuration (CHANGE THIS!). Used to access LAM configuration at http://[CONTAINER-IP]:8080" Type="Variable" Display="always" Required="true" Mask="true">lam</Config>
+  
+  <!-- DOMAIN TOPOLOGY -->
+  <Config Name="Join Existing Domain" Target="JOIN" Default="false" Mode="" Description="false = Create NEW domain (typical). true = Join EXISTING domain as additional DC." Type="Variable" Display="always" Required="false" Mask="false">false</Config>
+  <Config Name="Join Site" Target="JOINSITE" Default="" Mode="" Description="ADVANCED: AD Site name when joining existing domain. Leave empty for default site." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="Multi-Site VPN" Target="MULTISITE" Default="false" Mode="" Description="ADVANCED: Enable OpenVPN for multi-site replication. Requires VPN configuration." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  
+  <!-- ADVANCED DOMAIN SETTINGS -->
+  <Config Name="Domain DN" Target="DOMAIN_DC" Default="" Mode="" Description="OPTIONAL: Domain DN format (e.g., dc=example,dc=com). Auto-generated from DOMAIN if empty. LAM uses this for LDAP Base DN." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="Domain Email" Target="DOMAIN_EMAIL" Default="" Mode="" Description="OPTIONAL: Email domain for user accounts (e.g., example.com). Different from AD domain. Used by domain.sh script." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="DC Hostname" Target="HOSTNAME" Default="" Mode="" Description="OPTIONAL: Domain controller hostname. Auto-generated if empty." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  
+  <!-- SECURITY SETTINGS -->
+  <Config Name="Insecure LDAP" Target="INSECURELDAP" Default="false" Mode="" Description="SECURITY: false = Require encrypted LDAP (recommended). true = Allow unencrypted LDAP. LAM connects via LDAPS by default." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="No Password Complexity" Target="NOCOMPLEXITY" Default="false" Mode="" Description="SECURITY: false = Enforce password complexity (recommended). true = Disable complexity." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  
+  <!-- NETWORK SETTINGS -->
+  <Config Name="Multicast DNS" Target="MULTICASTDNS" Default="yes" Mode="" Description="Enable multicast DNS for service discovery. Recommended for mixed environments." Type="Variable" Display="advanced" Required="false" Mask="false">yes</Config>
+  <Config Name="NetBIOS Name" Target="HOSTNETBIOS" Default="" Mode="" Description="OPTIONAL: NetBIOS name for DC. Auto-generated if empty." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  
+  <!-- LOGGING -->
+  <Config Name="Log Level" Target="LOGLEVEL" Default="1" Mode="" Description="Samba log verbosity: 0=errors, 1=minimal (recommended), 3=detailed, 10=debug." Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  
+  <!-- TIME SYNC -->
+  <Config Name="NTP Server" Target="NTPSERVER" Default="pool.ntp.org" Mode="" Description="NTP server for internal time synchronization. Critical for Kerberos operation." Type="Variable" Display="advanced" Required="false" Mask="false">pool.ntp.org</Config>
+  <Config Name="Timezone" Target="TZ" Default="America/Denver" Mode="" Description="Container timezone. Should match Unraid host timezone." Type="Variable" Display="advanced" Required="false" Mask="false">America/Denver</Config>
+  
+  <!-- RPC PORT RANGE -->
+  <Config Name="RPC Port Range" Target="RPCPORTS" Default="49152-49172" Mode="" Description="ADVANCED: RPC dynamic port range for Samba. Default 49152-49172 is recommended." Type="Variable" Display="advanced" Required="false" Mask="false">49152-49172</Config>
+  
+  <!-- VOLUME MAPPINGS -->
+  <Config Name="Samba Data" Target="/var/lib/samba" Default="/mnt/user/appdata/samba-ad-lam/data" Mode="rw" Description="CRITICAL: Samba database and domain state. Must be persistent and backed up. ~100-500MB typical size." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/samba-ad-lam/data</Config>
+  <Config Name="Samba Config" Target="/etc/samba/external" Default="/mnt/user/appdata/samba-ad-lam/config" Mode="rw" Description="CRITICAL: Samba configuration files. Persist across updates. ~1-5MB typical size." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/samba-ad-lam/config</Config>
+  <Config Name="LAM Config" Target="/var/lib/lam/config" Default="/mnt/user/appdata/samba-ad-lam/lam-config" Mode="rw" Description="CRITICAL: LAM configuration and profiles. Persist across updates. ~1-2MB typical size. LAM auto-configures on first run." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/samba-ad-lam/lam-config</Config>
+  <Config Name="System Timezone" Target="/etc/localtime" Default="/etc/localtime" Mode="ro" Description="System timezone synchronization with host." Type="Path" Display="advanced" Required="false" Mask="false">/etc/localtime</Config>
+  <Config Name="OpenVPN Config" Target="/docker.ovpn" Default="/mnt/user/appdata/samba-ad-lam/openvpn/docker.ovpn" Mode="ro" Description="MULTI-SITE ONLY: OpenVPN configuration for site-to-site replication." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/samba-ad-lam/openvpn/docker.ovpn</Config>
+  <Config Name="VPN Credentials" Target="/credentials" Default="/mnt/user/appdata/samba-ad-lam/openvpn/credentials" Mode="ro" Description="MULTI-SITE ONLY: VPN authentication credentials." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/samba-ad-lam/openvpn/credentials</Config>
+  <Config Name="File Storage" Target="/storage" Default="/mnt/user/shares/samba-storage" Mode="rw" Description="OPTIONAL: File sharing storage. Configure in smb.conf post-deployment." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/shares/samba-storage</Config>
+</Container>
