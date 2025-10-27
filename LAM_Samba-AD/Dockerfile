@@ -45,13 +45,14 @@ RUN apt-get update && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
     rm -fr /tmp/* /var/tmp/*
 
-# Download and install LAM
-ENV LAM_VERSION=8.9
-RUN wget -O /tmp/lam.tar.gz \
-    "https://github.com/LDAPAccountManager/lam/releases/download/${LAM_VERSION}/ldap-account-manager-${LAM_VERSION}.tar.gz" && \
+# Download and install latest stable LAM release
+RUN LAM_LATEST=$(curl -s https://api.github.com/repos/LDAPAccountManager/lam/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/') && \
+    echo "Installing LAM version: $LAM_LATEST" && \
+    wget -O /tmp/lam.tar.gz \
+    "https://github.com/LDAPAccountManager/lam/releases/download/${LAM_LATEST}/ldap-account-manager-${LAM_LATEST}.tar.gz" && \
     mkdir -p /var/www/html && \
     tar -xzf /tmp/lam.tar.gz -C /var/www/html && \
-    mv /var/www/html/ldap-account-manager-${LAM_VERSION} /var/www/html/lam && \
+    mv /var/www/html/ldap-account-manager-${LAM_LATEST} /var/www/html/lam && \
     chown -R www-data:www-data /var/www/html/lam && \
     chmod -R 755 /var/www/html/lam && \
     rm /tmp/lam.tar.gz
