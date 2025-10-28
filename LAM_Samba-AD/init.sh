@@ -132,7 +132,11 @@ appSetup () {
 			idmap config ${URDOMAIN} : unix_nss_info = yes\\n\
 			idmap config ${URDOMAIN} : backend = ad\\n\
 			rpc server dynamic port range = ${RPCPORTS}\\n\
-			log level = ${LOGLEVEL}\
+			log level = ${LOGLEVEL}\\n\
+			tls enabled = yes\\n\
+			tls keyfile = /var/lib/samba/private/tls/key.pem\\n\
+			tls certfile = /var/lib/samba/private/tls/cert.pem\\n\
+			tls cafile = /var/lib/samba/private/tls/ca.pem\
 			" /etc/samba/smb.conf
 		sed -i "s/LOCALDC/${URDOMAIN}DC/g" /etc/samba/smb.conf
 		if [[ $DNSFORWARDER != "NONE" ]]; then
@@ -250,7 +254,9 @@ extendedKeyUsage = serverAuth, clientAuth
 DNS.1 = ${HOSTNAME}.${LDOMAIN}
 DNS.2 = ${LDOMAIN}
 DNS.3 = ${HOSTNAME}
+DNS.4 = localhost
 IP.1 = ${actual_ip}
+IP.2 = 127.0.0.1
 EOF
 	
 	echo "Generating new private key and certificate..."
@@ -277,9 +283,17 @@ EOF
 	echo "  - DNS: ${HOSTNAME}.${LDOMAIN}"
 	echo "  - DNS: ${LDOMAIN}"
 	echo "  - DNS: ${HOSTNAME}"
+	echo "  - DNS: localhost"
 	echo "  - IP: ${actual_ip}"
+	echo "  - IP: 127.0.0.1"
 	echo ""
 	echo "WARNING: This is a self-signed certificate. Not recommended for production!"
+	
+	# Restart Samba to load the new certificate
+	echo "Restarting Samba to load new certificate..."
+	supervisorctl restart samba
+	sleep 3
+	echo "Samba restarted with new certificate"
 	
 	# Clean up
 	rm -f /tmp/openssl-san.cnf
