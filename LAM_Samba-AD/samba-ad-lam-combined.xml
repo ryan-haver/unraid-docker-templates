@@ -62,14 +62,20 @@ This combined approach is designed for lab/testing environments. For production 
 **QUICK START:**
 1. Create MACVLAN network (see prerequisites above)
 2. Set Container IP (e.g., 192.168.1.200)
-3. Set Host IP (must match Container IP)
+3. Set Host IP (recommended: match Container IP, or set to NONE for auto-detection)
 4. Configure Domain Name (e.g., example.com)
 5. Set Domain Admin Password (strong password!)
 6. Set LAM Master Password (for web interface configuration)
 7. Configure DNS Forwarder (your router IP, e.g., 192.168.1.1)
 8. Click Apply
-9. Wait 2-3 minutes for provisioning
+9. Wait 10-15 seconds for network detection and service startup
 10. Access LAM at http://[CONTAINER-IP]:8080
+
+**STARTUP BEHAVIOR:**
+• Network detection: ~1 second (validates network is ready)
+• First run: 2-3 minutes (domain provisioning + LAM configuration)
+• Subsequent runs: 10-15 seconds (services start immediately)
+• Container auto-detects actual IP if different from HOSTIP setting
 
 **DOCUMENTATION:**
 • Samba AD DC: https://nowsci.com/samba-domain/
@@ -128,7 +134,7 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <!-- ESSENTIAL DOMAIN CONFIGURATION -->
   <Config Name="Domain Name" Target="DOMAIN" Default="example.local" Mode="" Description="REQUIRED: Domain FQDN (e.g., example.com, CORP.EXAMPLE.COM). Choose carefully - difficult to change later." Type="Variable" Display="always" Required="true" Mask="false">example.local</Config>
   <Config Name="Domain Admin Password" Target="DOMAINPASS" Default="ChangeMe123!@#" Mode="" Description="REQUIRED: Strong Administrator password for Samba AD. Minimum 12+ characters with complexity. Document securely." Type="Variable" Display="always" Required="true" Mask="true">ChangeMe123!@#</Config>
-  <Config Name="Host IP Address" Target="HOSTIP" Default="192.168.1.200" Mode="" Description="REQUIRED: MUST MATCH Container IP Address above. This tells Samba what IP to advertise. Example: 192.168.1.200" Type="Variable" Display="always" Required="true" Mask="false">192.168.1.200</Config>
+  <Config Name="Host IP Address" Target="HOSTIP" Default="192.168.1.200" Mode="" Description="RECOMMENDED: Expected container IP (e.g., 192.168.1.200). Used for network detection and Samba provisioning. Can differ from actual IP with DHCP - container will auto-detect and notify. Set to 'NONE' to skip IP validation." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.200</Config>
   <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="192.168.1.1" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.1</Config>
   
   <!-- LAM WEB INTERFACE CONFIGURATION -->
