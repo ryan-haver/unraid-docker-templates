@@ -132,7 +132,7 @@ appSetup () {
 			idmap config ${URDOMAIN} : unix_nss_info = yes\\n\
 			idmap config ${URDOMAIN} : backend = ad\\n\
 			rpc server dynamic port range = ${RPCPORTS}\\n\
-			log level = ${LOGLEVEL}\\n\
+			log level = ${LOGLEVEL} dns:0\\n\
 			tls enabled = yes\\n\
 			tls keyfile = /var/lib/samba/private/tls/key.pem\\n\
 			tls certfile = /var/lib/samba/private/tls/cert.pem\\n\
