@@ -4,54 +4,43 @@ set -e
 
 waitForNetwork() {
 	echo "Waiting for network interface to be ready..."
+	echo "DEBUG: HOSTIP=${1:-NONE}"
 	echo "DEBUG: Initial network status:"
 	ip addr show || echo "ip command failed"
-	ip link show || echo "ip link failed"
 	
 	local max_wait=30
 	local waited=0
+	local hostip="${1:-NONE}"
 	
 	while [ $waited -lt $max_wait ]; do
 		# Check if we have a non-loopback interface with an IP address
 		local has_ip=$(ip -4 addr show 2>/dev/null | grep -v "127.0.0.1" | grep "inet " | wc -l)
 		
-		# Check if we can resolve DNS (indicates network is working)
-		local can_resolve=0
-		if command -v host >/dev/null 2>&1; then
-			if host -W 1 google.com >/dev/null 2>&1; then
-				can_resolve=1
-			fi
-		fi
-		
 		# Check if the HOSTIP variable is set and matches our actual IP
-		if [ "$HOSTIP" != "NONE" ] && [ -n "$HOSTIP" ]; then
-			if ip addr show 2>/dev/null | grep -q "$HOSTIP"; then
-				echo "Network interface ready: found IP $HOSTIP"
-				sleep 2  # Small grace period
+		if [ "$hostip" != "NONE" ] && [ -n "$hostip" ]; then
+			if ip addr show 2>/dev/null | grep -q "$hostip"; then
+				echo "Network interface ready: found expected IP $hostip"
 				return 0
 			fi
 		elif [ $has_ip -gt 0 ]; then
 			# No HOSTIP specified, just check for any non-loopback IP
 			local current_ip=$(ip -4 addr show 2>/dev/null | grep -v "127.0.0.1" | grep "inet " | head -1 | awk '{print $2}' | cut -d'/' -f1)
 			echo "Network interface ready: found IP $current_ip"
-			sleep 2  # Small grace period
 			return 0
 		fi
 		
-		if [ $waited -eq 0 ] || [ $((waited % 10)) -eq 0 ]; then
-			echo "DEBUG: Network check at ${waited}s - Interfaces: $(ip link show 2>/dev/null | grep '^[0-9]' | cut -d':' -f2 | tr '\n' ' ')"
+		if [ $waited -eq 0 ]; then
+			echo "DEBUG: Network check - Interfaces: $(ip link show 2>/dev/null | grep '^[0-9]' | cut -d':' -f2 | tr '\n' ' ')"
 		fi
 		
-		echo "Waiting for network... (IP: $has_ip, DNS: $can_resolve) - $waited/$max_wait"
+		echo "Waiting for network... (IP count: $has_ip) - $waited/$max_wait"
 		sleep 1
 		waited=$((waited + 1))
 	done
 	
-	echo "WARNING: Network interface not fully ready after ${max_wait}s"
+	echo "WARNING: Expected network not found after ${max_wait}s"
 	echo "Current network status:"
 	ip addr show 2>/dev/null || echo "Cannot show IP addresses"
-	ip route show 2>/dev/null || echo "Cannot show routes"
-	echo "Continuing anyway..."
 	return 0
 }
 
@@ -61,7 +50,7 @@ appSetup () {
 	HOSTIP=${HOSTIP:-NONE}
 
 	# Wait for network to be ready (critical for MACVLAN)
-	waitForNetwork
+	waitForNetwork "$HOSTIP"
 
 	# Set remaining variables
 	DOMAIN=${DOMAIN:-SAMDOM.LOCAL}

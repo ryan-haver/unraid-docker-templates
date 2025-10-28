@@ -45,6 +45,7 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
         php8.1-mbstring \
         php8.1-gd \
         php8.1-curl \
+        php8.1-gmp \
         wget \
         unzip && \
     apt-get clean autoclean && \
