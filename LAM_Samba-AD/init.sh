@@ -8,28 +8,53 @@ waitForNetwork() {
 	local waited=0
 	
 	while [ $waited -lt $max_wait ]; do
-		# Check if we have any network interfaces besides lo
-		if ip addr show | grep -q "inet.*brd"; then
-			echo "Network interface is ready"
-			# Additional wait to ensure network is fully initialized
-			sleep 2
+		# Check if we have a non-loopback interface with an IP address
+		local has_ip=$(ip -4 addr show | grep -v "127.0.0.1" | grep "inet " | wc -l)
+		
+		# Check if we can resolve DNS (indicates network is working)
+		local can_resolve=0
+		if command -v host >/dev/null 2>&1; then
+			if host -W 1 google.com >/dev/null 2>&1; then
+				can_resolve=1
+			fi
+		fi
+		
+		# Check if the HOSTIP variable is set and matches our actual IP
+		if [ "$HOSTIP" != "NONE" ] && [ -n "$HOSTIP" ]; then
+			if ip addr show | grep -q "$HOSTIP"; then
+				echo "Network interface ready: found IP $HOSTIP"
+				sleep 2  # Small grace period
+				return 0
+			fi
+		elif [ $has_ip -gt 0 ]; then
+			# No HOSTIP specified, just check for any non-loopback IP
+			local current_ip=$(ip -4 addr show | grep -v "127.0.0.1" | grep "inet " | head -1 | awk '{print $2}' | cut -d'/' -f1)
+			echo "Network interface ready: found IP $current_ip"
+			sleep 2  # Small grace period
 			return 0
 		fi
-		echo "Waiting for network... ($waited/$max_wait)"
+		
+		echo "Waiting for network... (IP: $has_ip, DNS: $can_resolve) - $waited/$max_wait"
 		sleep 1
 		waited=$((waited + 1))
 	done
 	
-	echo "WARNING: Network interface not detected after ${max_wait}s, continuing anyway..."
+	echo "WARNING: Network interface not fully ready after ${max_wait}s"
+	echo "Current network status:"
+	ip addr show
+	echo "Continuing anyway..."
 	return 0
 }
 
 appSetup () {
 
+	# Set variables early so waitForNetwork can use them
+	HOSTIP=${HOSTIP:-NONE}
+
 	# Wait for network to be ready (critical for MACVLAN)
 	waitForNetwork
 
-	# Set variables
+	# Set remaining variables
 	DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
 	DOMAINPASS=${DOMAINPASS:-youshouldsetapassword^123}
 	JOIN=${JOIN:-false}
