@@ -58,16 +58,20 @@ appSetup () {
 	HOSTIP=${HOSTIP:-NONE}
 	RPCPORTS=${RPCPORTS:-"49152-49172"}
 	DOMAIN_DC=${DOMAIN_DC:-${DOMAIN_DC}}
-	LAM_PASSWORD=${LAM_PASSWORD:-lam}
-	LAM_LDAP_METHOD=${LAM_LDAP_METHOD:-ldaps}
+	# LAM Application Settings (config.cfg)
+	LAM_MASTER_PASSWORD=${LAM_MASTER_PASSWORD:-lam}
+	LAM_DEFAULT_PROFILE=${LAM_DEFAULT_PROFILE:-samba-ad}
 	LAM_SESSION_TIMEOUT=${LAM_SESSION_TIMEOUT:-30}
 	LAM_LANGUAGE=${LAM_LANGUAGE:-en_GB.utf8:UTF-8:English (UK)}
 	LAM_TIMEZONE=${LAM_TIMEZONE:-UTC}
+	
+	# LAM Server Profile Settings (profile.conf)
+	LAM_PROFILE_NAME=${LAM_PROFILE_NAME:-samba-ad}
+	LAM_PROFILE_PASSWORD=${LAM_PROFILE_PASSWORD:-lam}
+	LAM_LDAP_METHOD=${LAM_LDAP_METHOD:-ldaps}
 	LAM_USER_UID_RANGE=${LAM_USER_UID_RANGE:-10000-30000}
 	LAM_GROUP_GID_RANGE=${LAM_GROUP_GID_RANGE:-10000-30000}
-	LAM_MACHINE_UID_RANGE=${LAM_MACHINE_UID_RANGE:-50000-60000}
 	LAM_SEARCH_LIMIT=${LAM_SEARCH_LIMIT:-0}
-	LAM_PWD_POLICY=${LAM_PWD_POLICY:-8:1:1:1:0}
 	LOGLEVEL=${LOGLEVEL:-1}
 	NTPSERVER=${NTPSERVER:-pool.ntp.org}
 	MULTICASTDNS=${MULTICASTDNS:-yes}
@@ -385,8 +389,8 @@ schemaIDGUID:: +8nFQ43rpkWTOgbCCcSkqA==" > /tmp/Sshpubkey.class.ldif
 	ldbadd -H /var/lib/samba/private/sam.ldb /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.class.ldif --option="dsdb:schema update allowed"=true
 }
 
-configureLAM () {
-	echo "Configuring LAM for Samba AD with comprehensive automation..."
+configureLAMApplication () {
+	echo "=== CONFIGURING LAM APPLICATION (config.cfg) ==="
 	
 	# Ensure LAM config directory exists
 	mkdir -p /var/lib/lam/config
@@ -394,25 +398,68 @@ configureLAM () {
 	mkdir -p /var/lib/lam/tmp
 	chown -R www-data:www-data /var/lib/lam
 	
-	# Parse configuration variables
-	echo "Parsing LAM configuration from template variables..."
+	# Check if config.cfg already exists
+	if [[ -f /var/lib/lam/config/config.cfg ]]; then
+		echo "LAM application config exists - backing up..."
+		cp /var/lib/lam/config/config.cfg /var/lib/lam/config/config.cfg.backup.$(date +%s)
+	fi
+	
+	echo "Creating LAM application configuration (config.cfg)..."
+	
+	# Generate password hash (SHA256 with prefix)
+	LAM_MASTER_HASH=$(echo -n "${LAM_MASTER_PASSWORD}" | sha256sum | awk '{print $1}')
+	
+	# Create config.cfg with proper JSON format
+	cat > /var/lib/lam/config/config.cfg <<EOF
+{
+	"ServerProfiles": {
+		"${LAM_DEFAULT_PROFILE}": {
+			"name": "${LAM_DEFAULT_PROFILE}",
+			"default": true
+		}
+	},
+	"passwordHash": "{SHA256}${LAM_MASTER_HASH}",
+	"sessionTimeout": ${LAM_SESSION_TIMEOUT},
+	"allowedHosts": "",
+	"logLevel": "1",
+	"logDestination": "SYSLOG",
+	"encryptSession": "true",
+	"language": "${LAM_LANGUAGE}",
+	"timeZone": "${LAM_TIMEZONE}"
+}
+EOF
+	
+	# Set proper permissions
+	chown www-data:www-data /var/lib/lam/config/config.cfg
+	chmod 600 /var/lib/lam/config/config.cfg
+	
+	echo "✓ LAM application configuration created successfully"
+	echo "  - Default profile: ${LAM_DEFAULT_PROFILE}"
+	echo "  - Session timeout: ${LAM_SESSION_TIMEOUT} minutes"
+	echo "  - Language: ${LAM_LANGUAGE}"
+	echo "  - Timezone: ${LAM_TIMEZONE}"
+}
+
+configureLAMServerProfile () {
+	echo ""
+	echo "=== CONFIGURING LAM SERVER PROFILE (${LAM_PROFILE_NAME}.conf) ==="
+	
+	# Sanitize profile name
+	local clean_profile_name=$(echo "${LAM_PROFILE_NAME}" | sed 's/[^a-zA-Z0-9_-]//g')
+	if [[ -z "$clean_profile_name" ]]; then
+		clean_profile_name="samba-ad"
+		echo "WARNING: Invalid profile name, using default: $clean_profile_name"
+	elif [[ "$clean_profile_name" != "${LAM_PROFILE_NAME}" ]]; then
+		echo "WARNING: Profile name sanitized from '${LAM_PROFILE_NAME}' to '$clean_profile_name'"
+	fi
 	
 	# Parse UID/GID ranges
 	local user_uid_min=$(echo "${LAM_USER_UID_RANGE}" | cut -d'-' -f1)
 	local user_uid_max=$(echo "${LAM_USER_UID_RANGE}" | cut -d'-' -f2)
 	local group_gid_min=$(echo "${LAM_GROUP_GID_RANGE}" | cut -d'-' -f1)
 	local group_gid_max=$(echo "${LAM_GROUP_GID_RANGE}" | cut -d'-' -f2)
-	local machine_uid_min=$(echo "${LAM_MACHINE_UID_RANGE}" | cut -d'-' -f1)
-	local machine_uid_max=$(echo "${LAM_MACHINE_UID_RANGE}" | cut -d'-' -f2)
 	
-	# Parse password policy
-	local pwd_min_length=$(echo "${LAM_PWD_POLICY}" | cut -d':' -f1)
-	local pwd_min_lower=$(echo "${LAM_PWD_POLICY}" | cut -d':' -f2)
-	local pwd_min_upper=$(echo "${LAM_PWD_POLICY}" | cut -d':' -f3)
-	local pwd_min_numeric=$(echo "${LAM_PWD_POLICY}" | cut -d':' -f4)
-	local pwd_min_symbols=$(echo "${LAM_PWD_POLICY}" | cut -d':' -f5)
-	
-	# Determine LDAP connection method
+	# Determine LDAP connection settings
 	local server_url
 	local use_tls="no"
 	local ignore_tls_errors="false"
@@ -422,304 +469,298 @@ configureLAM () {
 			server_url="ldaps://127.0.0.1:636"
 			use_tls="no"  # TLS is built into LDAPS
 			ignore_tls_errors="true"  # For self-signed certificates
-			echo "LAM configured for LDAPS (SSL/TLS on port 636)"
+			echo "Profile configured for LDAPS (SSL/TLS on port 636)"
 			;;
 		"starttls")
 			server_url="ldap://127.0.0.1:389"
 			use_tls="yes"  # Use StartTLS
 			ignore_tls_errors="true"  # For self-signed certificates
-			echo "LAM configured for LDAP with StartTLS (port 389)"
+			echo "Profile configured for LDAP with StartTLS (port 389)"
 			;;
 		"ldap"|"plain")
 			server_url="ldap://127.0.0.1:389"
 			use_tls="no"  # Plain LDAP (insecure)
 			ignore_tls_errors="false"
-			echo "LAM configured for plain LDAP (port 389) - WARNING: Insecure!"
+			echo "Profile configured for plain LDAP (port 389) - WARNING: Insecure!"
 			;;
 		*)
 			# Default to LDAPS
 			server_url="ldaps://127.0.0.1:636"
 			use_tls="no"
 			ignore_tls_errors="true"
-			echo "LAM configured for LDAPS (default) - unknown method: ${LAM_LDAP_METHOD}"
+			echo "Profile configured for LDAPS (default) - unknown method: ${LAM_LDAP_METHOD}"
 			;;
 	esac
 	
-	echo "LAM Configuration Summary:"
-	echo "  - LDAP Method: ${LAM_LDAP_METHOD} (${server_url})"
-	echo "  - Session Timeout: ${LAM_SESSION_TIMEOUT} minutes"
-	echo "  - Language: ${LAM_LANGUAGE}"
-	echo "  - Timezone: ${LAM_TIMEZONE}"
-	echo "  - User UID Range: ${user_uid_min}-${user_uid_max}"
-	echo "  - Group GID Range: ${group_gid_min}-${group_gid_max}"
-	echo "  - Machine UID Range: ${machine_uid_min}-${machine_uid_max}"
-	echo "  - Password Policy: Min ${pwd_min_length} chars, ${pwd_min_lower} lower, ${pwd_min_upper} upper, ${pwd_min_numeric} numeric, ${pwd_min_symbols} symbols"
+	# Generate profile password hash
+	LAM_PROFILE_HASH=$(echo -n "${LAM_PROFILE_PASSWORD}" | sha256sum | awk '{print $1}')
 	
-	# Create LAM master configuration if it doesn't exist
-	if [[ ! -f /var/lib/lam/config/lam.conf ]]; then
-		echo "Creating LAM master configuration..."
-		
-		# Generate password hash (SHA256)
-		LAM_PASS_HASH=$(echo -n "${LAM_PASSWORD}" | sha256sum | awk '{print $1}')
-		
-		cat > /var/lib/lam/config/lam.conf <<EOF
-# LAM Master Configuration
-# Automatically generated from Docker template variables
-
-# Master password (SHA256 hash)
-Passwd: {SHA256}${LAM_PASS_HASH}
-
-# Session timeout in minutes
-sessionTimeout: ${LAM_SESSION_TIMEOUT}
-
-# Allowed hosts (empty = all hosts allowed)
-allowedHosts: 
-
-# Log level (0=disabled, 1=errors, 2=warnings, 3=info, 4=debug)
-logLevel: 2
-
-# Log destination
-logDestination: SYSLOG
-
-# License information (LAM Pro)
-licenseEmailFrom: 
-licenseEmailTo: 
-license: 
-
-# Password reset settings
-passwordResetAllowedHosts: 
-passwordResetAllowSpecificPassword: false
-passwordResetForcePasswordChange: true
-passwordResetDefaultPasswordOutput: 2
-
-# Security settings
-encryptSession: true
-httpAuthentication: false
-
-EOF
-		chown www-data:www-data /var/lib/lam/config/lam.conf
-		chmod 600 /var/lib/lam/config/lam.conf
-		echo "LAM master configuration created with session timeout: ${LAM_SESSION_TIMEOUT} minutes"
-	else
-		echo "LAM master configuration already exists - skipping"
-	fi
+	# Create server profile with proper JSON format for modern LAM
+	local profile_file="/var/lib/lam/config/${clean_profile_name}.conf"
 	
-	# Create comprehensive LAM server profile configuration
-	echo "Creating comprehensive LAM server profile from template variables..."
+	echo "Creating server profile: ${clean_profile_name}.conf"
 	
-	cat > /var/lib/lam/config/lam.conf.sample <<EOF
-# LAM Server Profile for Samba Active Directory
-# Automatically generated from Docker template variables
-# Configuration Date: $(date)
-
-# ===== SERVER CONNECTION SETTINGS =====
-ServerURL: ${server_url}
-useTLS: ${use_tls}
-Admins: cn=Administrator,cn=Users,${DOMAIN_DC}
-Passwd: {SHA256}$(echo -n "${LAM_PASSWORD}" | sha256sum | awk '{print $1}')
-
-# ===== LDAP TREE SETTINGS =====
-treesuffix: ${DOMAIN_DC}
-
-# ===== INTERFACE SETTINGS =====
-defaultLanguage: ${LAM_LANGUAGE}
-timeZone: ${LAM_TIMEZONE}
-
-# ===== SCRIPT SETTINGS =====
-scriptPath: 
-scriptServer: 
-scriptRights: 
-
-# ===== TOOL SETTINGS =====
-tools: tool_hide_pwdChange tool_hide_tests
-
-# ===== UID/GID MANAGEMENT =====
-# User account UID range
-modules: posixAccount_user_minUID:${user_uid_min}
-modules: posixAccount_user_maxUID:${user_uid_max}
-
-# Machine account UID range  
-modules: posixAccount_host_minMachine:${machine_uid_min}
-modules: posixAccount_host_maxMachine:${machine_uid_max}
-
-# Group GID range
-modules: posixGroup_group_minGID:${group_gid_min}
-modules: posixGroup_group_maxGID:${group_gid_max}
-
-# ===== ACCOUNT TYPE CONFIGURATION =====
-activeTypes: user,group
-
-# User account type settings
-types: suffix_user: cn=Users,${DOMAIN_DC}
-types: attr_user: #uid;#givenName;#sn;#uidNumber;#gidNumber;#mail;#telephoneNumber
-types: modules_user: inetOrgPerson,posixAccount,shadowAccount
-
-# Group account type settings
-types: suffix_group: cn=Users,${DOMAIN_DC}
-types: attr_group: #cn;#gidNumber;#memberUID;#description
-types: modules_group: posixGroup
-
-# Computer account type settings (if computers are managed)
-# types: suffix_host: cn=Computers,${DOMAIN_DC}
-# types: attr_host: #uid;#cn;#description
-# types: modules_host: account,posixAccount
-
-# ===== SECURITY AND CONNECTION SETTINGS =====
-followReferrals: false
-pagedResults: false
-referentialIntegrityOverlay: false
-hideInvalidDNs: false
-
-# TLS/SSL settings
-ignoreTLSErrors: ${ignore_tls_errors}
-
-# ===== SEARCH SETTINGS =====
-searchLimit: ${LAM_SEARCH_LIMIT}
-
-# ===== ACCESS CONTROL =====
-accessLevel: 100
-
-# ===== LOGIN SETTINGS =====
-loginMethod: list
-loginSearchSuffix: ${DOMAIN_DC}
-loginSearchFilter: uid=%USER%
-loginSearchDN: 
-loginSearchPassword: 
-
-# ===== AUTHENTICATION =====
-httpAuthentication: false
-
-# ===== TWO-FACTOR AUTHENTICATION =====
-twoFactorAuthentication: none
-twoFactorAuthenticationURL: 
-twoFactorAuthenticationInsecure: false
-twoFactorAuthenticationLabel: 
-
-# ===== PASSWORD POLICY =====
-pwdPolicyMinLength: ${pwd_min_length}
-pwdPolicyMinLowercase: ${pwd_min_lower}
-pwdPolicyMinUppercase: ${pwd_min_upper}
-pwdPolicyMinNumeric: ${pwd_min_numeric}
-pwdPolicyMinSymbolic: ${pwd_min_symbols}
-pwdPolicyMinClasses: 3
-
-# ===== ORGANIZATIONAL SETTINGS =====
-# Default organizational units structure for Samba AD
-# These match typical Samba AD DC structure
-
-# Default groups for new users
-modules: inetOrgPerson_user_defaultGroups: cn=Domain Users,cn=Users,${DOMAIN_DC}
-
-# Shell settings for Unix attributes
-modules: posixAccount_user_defaultShell: /bin/bash
-modules: posixAccount_user_homeDirectory_placeholder: /home/%USER%
-
-# ===== ADVANCED SETTINGS =====
-# LDAP cache timeout
-lamProMailSubject: 
-
-# Custom scripts (disabled by default)
-scriptServer: 
-
-# Domain integration
-domains: domain=${URDOMAIN}
-
-# ===== NOTIFICATION SETTINGS =====
-# Email notifications (configure if needed)
-# mailServer: 
-# mailUser: 
-# mailPassword: 
-
+	cat > "$profile_file" <<EOF
+{
+	"ServerURL": "${server_url}",
+	"useTLS": "${use_tls}",
+	"ignoreTLSErrors": ${ignore_tls_errors},
+	"treesuffix": "${DOMAIN_DC}",
+	"Admins": ["cn=Administrator,cn=Users,${DOMAIN_DC}"],
+	"Passwd": "{SHA256}${LAM_PROFILE_HASH}",
+	"searchLimit": ${LAM_SEARCH_LIMIT},
+	"accessLevel": 100,
+	"loginMethod": "search",
+	"loginSearchSuffix": "${DOMAIN_DC}",
+	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
+	"activeTypes": "user,group",
+	"modules": {
+		"user": ["windowsUser", "posixAccount"],
+		"group": ["windowsGroup", "posixGroup"]
+	},
+	"types": {
+		"user": {
+			"suffix": "cn=Users,${DOMAIN_DC}",
+			"attr": ["#sAMAccountName", "#givenName", "#sn", "#mail"],
+			"modules": "windowsUser,posixAccount"
+		},
+		"group": {
+			"suffix": "cn=Users,${DOMAIN_DC}",
+			"attr": ["#cn", "#description", "#member"],
+			"modules": "windowsGroup,posixGroup"
+		}
+	},
+	"moduleSettings": {
+		"posixAccount_user": {
+			"minUID": "${user_uid_min}",
+			"maxUID": "${user_uid_max}",
+			"minMachine": "50000",
+			"maxMachine": "60000"
+		},
+		"posixGroup_group": {
+			"minGID": "${group_gid_min}",
+			"maxGID": "${group_gid_max}"
+		}
+	}
+}
 EOF
 	
-	chown www-data:www-data /var/lib/lam/config/lam.conf.sample
-	chmod 600 /var/lib/lam/config/lam.conf.sample
+	# Set proper permissions
+	chown www-data:www-data "$profile_file"
+	chmod 600 "$profile_file"
 	
-	echo "LAM server profile created successfully!"
-	echo "Configuration details:"
+	echo "✓ Server profile created successfully"
+	echo "  - Profile name: ${clean_profile_name}"
+	echo "  - LDAP method: ${LAM_LDAP_METHOD} (${server_url})"
 	echo "  - Base DN: ${DOMAIN_DC}"
-	echo "  - Admin DN: cn=Administrator,cn=Users,${DOMAIN_DC}"
-	echo "  - User Container: cn=Users,${DOMAIN_DC}"
-	echo "  - Group Container: cn=Users,${DOMAIN_DC}"
-	echo "  - User UID Range: ${user_uid_min}-${user_uid_max}"
-	echo "  - Group GID Range: ${group_gid_min}-${group_gid_max}"
-	echo "  - Machine UID Range: ${machine_uid_min}-${machine_uid_max}"
-	
-	echo "LAM configuration complete"
-	echo "LAM web interface will be available at http://<host-ip>:8080"
-	echo "Default LAM password: ${LAM_PASSWORD}"
+	echo "  - User UID range: ${user_uid_min}-${user_uid_max}"
+	echo "  - Group GID range: ${group_gid_min}-${group_gid_max}"
+	echo "  - Search limit: ${LAM_SEARCH_LIMIT}"
+}
+
+configureLAM () {
 	echo ""
-	echo "=== LAM QUICK START GUIDE ==="
-	echo "1. Open LAM at http://<container-ip>:8080"
-	echo "2. Login with password: ${LAM_PASSWORD}"
-	echo "3. LAM is pre-configured for your Samba AD domain:"
-	echo "   - Server: ${server_url}"
-	echo "   - Base DN: ${DOMAIN_DC}"
-	echo "   - Admin: cn=Administrator,cn=Users,${DOMAIN_DC}"
-	echo "4. All UID/GID ranges and policies are set from template"
-	echo "5. Ready to manage users, groups, and computers!"
-	echo "=========================="
+	echo "========================================"
+	echo "LAM CONFIGURATION WITH VALIDATION"
+	echo "========================================"
+	echo "Configuring LAM for Samba AD integration..."
+	echo "Domain: ${DOMAIN} (${DOMAIN_DC})"
+	
+	# Step 1: Configure LAM application
+	configureLAMApplication
+	
+	# Step 2: Configure LAM server profile  
+	configureLAMServerProfile
+	
+	# Step 3: Validate configuration
+	echo ""
+	echo "=== VALIDATING LAM CONFIGURATION ==="
+	if validateLAMConfiguration; then
+		echo ""
+		echo "========================================"
+		echo "LAM CONFIGURATION COMPLETE ✓"
+		echo "========================================"
+		echo "LAM web interface: http://<host-ip>:8080"
+		echo "Master password: ${LAM_MASTER_PASSWORD}"
+		echo "Profile password: ${LAM_PROFILE_PASSWORD}"
+		echo "Default profile: ${LAM_DEFAULT_PROFILE}"
+		echo ""
+		echo "Quick Start:"
+		echo "1. Open LAM web interface"
+		echo "2. Login with master password"
+		echo "3. Select profile: ${LAM_PROFILE_NAME}"
+		echo "4. Login with profile password"
+		echo "5. Start managing AD accounts!"
+		echo "========================================"
+	else
+		echo ""
+		echo "========================================"
+		echo "LAM CONFIGURATION FAILED ✗"
+		echo "========================================"
+		echo "Check the validation errors above"
+		echo "LAM may not function correctly"
+		echo "========================================"
+		return 1
+	fi
 }
 
 validateLAMConfiguration () {
 	echo "Validating LAM configuration..."
 	
-	# Check master config
-	if [[ ! -f /var/lib/lam/config/lam.conf ]]; then
-		echo "ERROR: LAM master configuration missing!"
-		return 1
-	fi
-	
-	# Check server profile
-	if [[ ! -f /var/lib/lam/config/lam.conf.sample ]]; then
-		echo "ERROR: LAM server profile missing!"
-		return 1
-	fi
-	
-	# Check permissions
-	if [[ $(stat -c %U /var/lib/lam/config/lam.conf) != "www-data" ]]; then
-		echo "WARNING: LAM master config ownership incorrect - fixing..."
-		chown www-data:www-data /var/lib/lam/config/lam.conf
-	fi
-	
-	if [[ $(stat -c %U /var/lib/lam/config/lam.conf.sample) != "www-data" ]]; then
-		echo "WARNING: LAM server profile ownership incorrect - fixing..."
-		chown www-data:www-data /var/lib/lam/config/lam.conf.sample
-	fi
-	
-	# Validate configuration content
 	local config_errors=0
+	local warnings=0
 	
-	if ! grep -q "treesuffix: ${DOMAIN_DC}" /var/lib/lam/config/lam.conf.sample; then
-		echo "ERROR: Base DN not properly configured in LAM profile"
-		((config_errors++))
+	# Sanitize profile name (same logic as in configureLAMServerProfile)
+	local clean_profile_name=$(echo "${LAM_PROFILE_NAME}" | sed 's/[^a-zA-Z0-9_-]//g')
+	if [[ -z "$clean_profile_name" ]]; then
+		clean_profile_name="samba-ad"
 	fi
 	
-	if ! grep -q "ServerURL: " /var/lib/lam/config/lam.conf.sample; then
-		echo "ERROR: Server URL not configured in LAM profile"
-		((config_errors++))
-	fi
+	echo "Checking LAM configuration files..."
 	
-	if ! grep -q "sessionTimeout: ${LAM_SESSION_TIMEOUT}" /var/lib/lam/config/lam.conf; then
-		echo "ERROR: Session timeout not properly configured"
+	# 1. Check LAM application config (config.cfg)
+	if [[ ! -f /var/lib/lam/config/config.cfg ]]; then
+		echo "ERROR: LAM application config missing (config.cfg)"
 		((config_errors++))
-	fi
-	
-	if [[ $config_errors -eq 0 ]]; then
-		echo "LAM configuration validation passed!"
+	else
+		echo "✓ Application config exists (config.cfg)"
 		
-		# Create default server profile as active profile
-		if [[ ! -f /var/lib/lam/config/lam.conf.default ]]; then
-			echo "Creating default active LAM profile..."
-			cp /var/lib/lam/config/lam.conf.sample /var/lib/lam/config/lam.conf.default
-			chown www-data:www-data /var/lib/lam/config/lam.conf.default
-			chmod 600 /var/lib/lam/config/lam.conf.default
-			echo "Default LAM profile created - LAM ready to use!"
+		# Validate JSON syntax
+		if ! python3 -m json.tool /var/lib/lam/config/config.cfg > /dev/null 2>&1; then
+			echo "ERROR: Application config has invalid JSON syntax"
+			((config_errors++))
+		else
+			echo "✓ Application config has valid JSON syntax"
 		fi
 		
+		# Check required fields in config.cfg
+		if ! grep -q "passwordHash" /var/lib/lam/config/config.cfg; then
+			echo "ERROR: Application config missing passwordHash"
+			((config_errors++))
+		fi
+		
+		if ! grep -q "ServerProfiles" /var/lib/lam/config/config.cfg; then
+			echo "ERROR: Application config missing ServerProfiles"
+			((config_errors++))
+		fi
+		
+		# Check ownership and permissions
+		if [[ $(stat -c %U /var/lib/lam/config/config.cfg) != "www-data" ]]; then
+			echo "WARNING: Application config ownership incorrect - should be www-data"
+			((warnings++))
+		fi
+		
+		if [[ $(stat -c %a /var/lib/lam/config/config.cfg) != "600" ]]; then
+			echo "WARNING: Application config permissions incorrect - should be 600"
+			((warnings++))
+		fi
+	fi
+	
+	# 2. Check LAM server profile
+	local profile_file="/var/lib/lam/config/${clean_profile_name}.conf"
+	if [[ ! -f "$profile_file" ]]; then
+		echo "ERROR: LAM server profile missing (${clean_profile_name}.conf)"
+		((config_errors++))
+	else
+		echo "✓ Server profile exists (${clean_profile_name}.conf)"
+		
+		# Validate JSON syntax  
+		if ! python3 -m json.tool "$profile_file" > /dev/null 2>&1; then
+			echo "ERROR: Server profile has invalid JSON syntax"
+			((config_errors++))
+		else
+			echo "✓ Server profile has valid JSON syntax"
+		fi
+		
+		# Check required fields in server profile
+		local required_fields=("ServerURL" "treesuffix" "Passwd" "activeTypes" "modules")
+		for field in "${required_fields[@]}"; do
+			if ! grep -q "\"$field\"" "$profile_file"; then
+				echo "ERROR: Server profile missing required field: $field"
+				((config_errors++))
+			fi
+		done
+		
+		# Validate specific content
+		if ! grep -q "\"treesuffix\": \"${DOMAIN_DC}\"" "$profile_file"; then
+			echo "ERROR: Server profile treesuffix not set to correct domain DN"
+			((config_errors++))
+		fi
+		
+		if ! grep -q "\"activeTypes\": \"user,group\"" "$profile_file"; then
+			echo "ERROR: Server profile missing essential activeTypes configuration"
+			((config_errors++))
+		fi
+		
+		# Check ownership and permissions
+		if [[ $(stat -c %U "$profile_file") != "www-data" ]]; then
+			echo "WARNING: Server profile ownership incorrect - should be www-data"
+			((warnings++))
+		fi
+		
+		if [[ $(stat -c %a "$profile_file") != "600" ]]; then
+			echo "WARNING: Server profile permissions incorrect - should be 600"
+			((warnings++))
+		fi
+	fi
+	
+	# 3. Check LAM directory structure
+	local required_dirs=("/var/lib/lam/config" "/var/lib/lam/sess" "/var/lib/lam/tmp")
+	for dir in "${required_dirs[@]}"; do
+		if [[ ! -d "$dir" ]]; then
+			echo "ERROR: LAM directory missing: $dir"
+			((config_errors++))
+		elif [[ $(stat -c %U "$dir") != "www-data" ]]; then
+			echo "WARNING: LAM directory ownership incorrect: $dir - should be www-data"
+			((warnings++))
+		fi
+	done
+	
+	# 4. Validate password hashes are properly set
+	if [[ -f /var/lib/lam/config/config.cfg ]] && [[ -f "$profile_file" ]]; then
+		if grep -q "passwordHash.*{SHA256}" /var/lib/lam/config/config.cfg && 
+		   grep -q "Passwd.*{SHA256}" "$profile_file"; then
+			echo "✓ Password hashes properly configured"
+		else
+			echo "ERROR: Password hashes not properly configured"
+			((config_errors++))
+		fi
+	fi
+	
+	# 5. Check for conflicts with old configuration format
+	if [[ -f /var/lib/lam/config/lam.conf ]]; then
+		echo "WARNING: Old format LAM config detected (lam.conf) - may cause conflicts"
+		echo "  Consider removing: /var/lib/lam/config/lam.conf"
+		((warnings++))
+	fi
+	
+	# Report validation results
+	echo ""
+	echo "=== VALIDATION SUMMARY ==="
+	
+	if [[ $config_errors -eq 0 ]]; then
+		echo "✓ LAM configuration validation PASSED"
+		echo "✓ Application config: Valid"
+		echo "✓ Server profile (${clean_profile_name}): Valid"
+		echo "✓ Essential settings: Configured"
+		echo "✓ File permissions: Correct"
+		
+		if [[ $warnings -gt 0 ]]; then
+			echo "⚠  $warnings warnings detected (non-critical)"
+		fi
+		
+		echo ""
+		echo "LAM is ready for use!"
+		echo "Configuration validated for domain: ${DOMAIN}"
 		return 0
 	else
-		echo "LAM configuration validation failed with $config_errors errors"
+		echo "✗ LAM configuration validation FAILED"
+		echo "✗ $config_errors critical errors detected"
+		if [[ $warnings -gt 0 ]]; then
+			echo "⚠  $warnings warnings detected"
+		fi
+		echo ""
+		echo "LAM may not function correctly until errors are resolved"
 		return 1
 	fi
 }

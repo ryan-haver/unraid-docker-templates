@@ -143,17 +143,36 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <Config Name="Host IP Address" Target="HOSTIP" Default="192.168.1.200" Mode="" Description="RECOMMENDED: Expected container IP (e.g., 192.168.1.200). Used for network detection and Samba provisioning. Can differ from actual IP with DHCP - container will auto-detect and notify. Set to 'NONE' to skip IP validation." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.200</Config>
   <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="192.168.1.1" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.1</Config>
   
-  <!-- LAM WEB INTERFACE CONFIGURATION -->
-  <Config Name="LAM Password" Target="LAM_PASSWORD" Default="" Mode="" Description="LAM WEB INTERFACE: Password for LAM web admin access. Use strong password. Default username: Administrator" Type="Variable" Display="always" Required="true" Mask="true"></Config>
-  <Config Name="LAM LDAP Method" Target="LAM_LDAP_METHOD" Default="ldaps" Mode="" Description="LAM CONNECTION: ldaps = SSL/TLS on port 636 (secure), starttls = StartTLS on port 389 (secure), ldap = Plain LDAP on port 389 (insecure, not recommended)" Type="Variable" Display="advanced" Required="false" Mask="false">ldaps</Config>
-  <Config Name="LAM Session Timeout" Target="LAM_SESSION_TIMEOUT" Default="30" Mode="" Description="LAM WEB: Session timeout in minutes. Default: 30 minutes" Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
-  <Config Name="LAM Default Language" Target="LAM_LANGUAGE" Default="en_GB.utf8:UTF-8:English (UK)" Mode="" Description="LAM INTERFACE: Default language for LAM web interface. Format: locale:encoding:display_name" Type="Variable" Display="advanced" Required="false" Mask="false">en_GB.utf8:UTF-8:English (UK)</Config>
-  <Config Name="LAM Timezone" Target="LAM_TIMEZONE" Default="UTC" Mode="" Description="LAM INTERFACE: Timezone for LAM web interface. Default: UTC" Type="Variable" Display="advanced" Required="false" Mask="false">UTC</Config>
-  <Config Name="LAM User UID Range" Target="LAM_USER_UID_RANGE" Default="10000-30000" Mode="" Description="LAM USERS: UID range for new user accounts. Format: min-max" Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
-  <Config Name="LAM Group GID Range" Target="LAM_GROUP_GID_RANGE" Default="10000-30000" Mode="" Description="LAM GROUPS: GID range for new groups. Format: min-max" Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
-  <Config Name="LAM Machine UID Range" Target="LAM_MACHINE_UID_RANGE" Default="50000-60000" Mode="" Description="LAM COMPUTERS: UID range for computer accounts. Format: min-max" Type="Variable" Display="advanced" Required="false" Mask="false">50000-60000</Config>
-  <Config Name="LAM Search Limit" Target="LAM_SEARCH_LIMIT" Default="0" Mode="" Description="LAM SEARCH: Maximum LDAP search results. 0 = unlimited (recommended for small domains)" Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
-  <Config Name="LAM Password Policy" Target="LAM_PWD_POLICY" Default="8:1:1:1:0" Mode="" Description="LAM SECURITY: Password policy as min_length:min_lowercase:min_uppercase:min_numeric:min_symbols. Default: 8:1:1:1:0" Type="Variable" Display="advanced" Required="false" Mask="false">8:1:1:1:0</Config>
+  <!-- ========================================= -->
+  <!-- LAM APPLICATION SETTINGS (config.cfg)   -->
+  <!-- ========================================= -->
+  <Config Name="LAM Master Password" Target="LAM_MASTER_PASSWORD" Default="lam" Mode="" Description="LAM APPLICATION: Master password for creating/managing server profiles. Keep default unless you need to manage profiles manually." Type="Variable" Display="advanced" Required="false" Mask="true">lam</Config>
+  <Config Name="LAM Default Profile" Target="LAM_DEFAULT_PROFILE" Default="samba-ad" Mode="" Description="LAM APPLICATION: Which server profile to auto-select at login." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
+  <Config Name="LAM Session Timeout" Target="LAM_SESSION_TIMEOUT" Default="30" Mode="" Description="LAM APPLICATION: Global session timeout in minutes for all profiles." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
+  <Config Name="LAM Log Level" Target="LAM_LOG_LEVEL" Default="4" Mode="" Description="LAM APPLICATION: Global logging level (0=off, 1=error, 2=warning, 3=info, 4=debug)." Type="Variable" Display="advanced" Required="false" Mask="false">4</Config>
+
+  <!-- ========================================= -->
+  <!-- SERVER PROFILE SETTINGS (profile.conf)  -->
+  <!-- ========================================= -->
+  
+  <!-- Profile Identity & Security -->
+  <Config Name="LAM Profile Name" Target="LAM_PROFILE_NAME" Default="samba-ad" Mode="" Description="SERVER PROFILE: Name for this LDAP server profile (alphanumeric, hyphens, underscores only)." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
+  <Config Name="LAM Profile Password" Target="LAM_PROFILE_PASSWORD" Default="" Mode="" Description="SERVER PROFILE: Password to access this specific LDAP server profile. Use strong password." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  
+  <!-- LDAP Connection Settings -->
+  <Config Name="LAM LDAP Method" Target="LAM_LDAP_METHOD" Default="ldaps" Mode="" Description="SERVER PROFILE: LDAP connection method (ldaps=SSL port 636, starttls=StartTLS port 389, ldap=plain port 389)." Type="Variable" Display="advanced" Required="false" Mask="false">ldaps</Config>
+  
+  <!-- Essential Account Management -->
+  <Config Name="LAM User Suffix" Target="LAM_USER_SUFFIX" Default="CN=Users" Mode="" Description="SERVER PROFILE: LDAP container for user accounts (relative to base DN)." Type="Variable" Display="advanced" Required="false" Mask="false">CN=Users</Config>
+  <Config Name="LAM Group Suffix" Target="LAM_GROUP_SUFFIX" Default="CN=Users" Mode="" Description="SERVER PROFILE: LDAP container for group accounts (relative to base DN)." Type="Variable" Display="advanced" Required="false" Mask="false">CN=Users</Config>
+  <Config Name="LAM User Modules" Target="LAM_USER_MODULES" Default="windowsUser,inetOrgPerson" Mode="" Description="SERVER PROFILE: LAM modules for user management (comma-separated)." Type="Variable" Display="advanced" Required="false" Mask="false">windowsUser,inetOrgPerson</Config>
+  <Config Name="LAM Group Modules" Target="LAM_GROUP_MODULES" Default="windowsGroup" Mode="" Description="SERVER PROFILE: LAM modules for group management (comma-separated)." Type="Variable" Display="advanced" Required="false" Mask="false">windowsGroup</Config>
+  
+  <!-- Profile-Specific Settings -->
+  <Config Name="LAM Profile Language" Target="LAM_PROFILE_LANGUAGE" Default="en_GB.utf8:UTF-8:English (UK)" Mode="" Description="SERVER PROFILE: Default language for this server profile." Type="Variable" Display="advanced" Required="false" Mask="false">en_GB.utf8:UTF-8:English (UK)</Config>
+  <Config Name="LAM Profile Timezone" Target="LAM_PROFILE_TIMEZONE" Default="UTC" Mode="" Description="SERVER PROFILE: Timezone for this server profile." Type="Variable" Display="advanced" Required="false" Mask="false">UTC</Config>
+  <Config Name="LAM UID Range" Target="LAM_UID_RANGE" Default="10000-30000" Mode="" Description="SERVER PROFILE: UID range for new users (format: min-max)." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
+  <Config Name="LAM GID Range" Target="LAM_GID_RANGE" Default="10000-30000" Mode="" Description="SERVER PROFILE: GID range for new groups (format: min-max)." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
   
   <!-- DOMAIN TOPOLOGY -->
   <Config Name="Join Existing Domain" Target="JOIN" Default="false" Mode="" Description="false = Create NEW domain (typical). true = Join EXISTING domain as additional DC." Type="Variable" Display="always" Required="false" Mask="false">false</Config>
