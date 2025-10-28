@@ -144,7 +144,8 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="192.168.1.1" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.1</Config>
   
   <!-- LAM WEB INTERFACE CONFIGURATION -->
-  <Config Name="LAM Master Password" Target="LAM_PASSWORD" Default="lam" Mode="" Description="REQUIRED: Master password for LAM web interface configuration (CHANGE THIS!). Used to access LAM configuration at http://[CONTAINER-IP]:8080" Type="Variable" Display="always" Required="true" Mask="true">lam</Config>
+    <Config Name="LAM Password" Target="LAM_PASSWORD" Default="" Mode="" Description="LAM WEB INTERFACE: Password for LAM web admin access. Use strong password. Default username: Administrator" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="LAM LDAP Method" Target="LAM_LDAP_METHOD" Default="ldaps" Mode="" Description="LAM CONNECTION: ldaps = SSL/TLS on port 636 (secure), starttls = StartTLS on port 389 (secure), ldap = Plain LDAP on port 389 (insecure, not recommended)" Type="Variable" Display="advanced" Required="false" Mask="false">ldaps</Config>
   
   <!-- DOMAIN TOPOLOGY -->
   <Config Name="Join Existing Domain" Target="JOIN" Default="false" Mode="" Description="false = Create NEW domain (typical). true = Join EXISTING domain as additional DC." Type="Variable" Display="always" Required="false" Mask="false">false</Config>
