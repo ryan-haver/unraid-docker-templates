@@ -34,6 +34,7 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
         dnsutils \
         ntp \
         jq \
+        bzip2 \
         # LAM Web Interface dependencies (PHP 8.1 from ondrej PPA)
         nginx \
         php8.1-fpm \
