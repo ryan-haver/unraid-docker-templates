@@ -62,16 +62,20 @@ appSetup () {
 	LAM_MASTER_PASSWORD=${LAM_MASTER_PASSWORD:-lam}
 	LAM_DEFAULT_PROFILE=${LAM_DEFAULT_PROFILE:-samba-ad}
 	LAM_SESSION_TIMEOUT=${LAM_SESSION_TIMEOUT:-30}
-	LAM_LANGUAGE=${LAM_LANGUAGE:-en_GB.utf8:UTF-8:English (UK)}
-	LAM_TIMEZONE=${LAM_TIMEZONE:-UTC}
+	LAM_LOG_LEVEL=${LAM_LOG_LEVEL:-4}
 	
 	# LAM Server Profile Settings (profile.conf)
 	LAM_PROFILE_NAME=${LAM_PROFILE_NAME:-samba-ad}
 	LAM_PROFILE_PASSWORD=${LAM_PROFILE_PASSWORD:-lam}
 	LAM_LDAP_METHOD=${LAM_LDAP_METHOD:-ldaps}
-	LAM_USER_UID_RANGE=${LAM_USER_UID_RANGE:-10000-30000}
-	LAM_GROUP_GID_RANGE=${LAM_GROUP_GID_RANGE:-10000-30000}
-	LAM_SEARCH_LIMIT=${LAM_SEARCH_LIMIT:-0}
+	LAM_USER_SUFFIX=${LAM_USER_SUFFIX:-CN=Users}
+	LAM_GROUP_SUFFIX=${LAM_GROUP_SUFFIX:-CN=Users}
+	LAM_USER_MODULES=${LAM_USER_MODULES:-windowsUser,inetOrgPerson}
+	LAM_GROUP_MODULES=${LAM_GROUP_MODULES:-windowsGroup}
+	LAM_PROFILE_LANGUAGE=${LAM_PROFILE_LANGUAGE:-en_GB.utf8:UTF-8:English (UK)}
+	LAM_PROFILE_TIMEZONE=${LAM_PROFILE_TIMEZONE:-UTC}
+	LAM_UID_RANGE=${LAM_UID_RANGE:-10000-30000}
+	LAM_GID_RANGE=${LAM_GID_RANGE:-10000-30000}
 	LOGLEVEL=${LOGLEVEL:-1}
 	NTPSERVER=${NTPSERVER:-pool.ntp.org}
 	MULTICASTDNS=${MULTICASTDNS:-yes}
@@ -421,11 +425,11 @@ configureLAMApplication () {
 	"passwordHash": "{SHA256}${LAM_MASTER_HASH}",
 	"sessionTimeout": ${LAM_SESSION_TIMEOUT},
 	"allowedHosts": "",
-	"logLevel": "1",
+	"logLevel": "${LAM_LOG_LEVEL}",
 	"logDestination": "SYSLOG",
 	"encryptSession": "true",
-	"language": "${LAM_LANGUAGE}",
-	"timeZone": "${LAM_TIMEZONE}"
+	"language": "${LAM_PROFILE_LANGUAGE}",
+	"timeZone": "${LAM_PROFILE_TIMEZONE}"
 }
 EOF
 	
@@ -436,8 +440,9 @@ EOF
 	echo "✓ LAM application configuration created successfully"
 	echo "  - Default profile: ${LAM_DEFAULT_PROFILE}"
 	echo "  - Session timeout: ${LAM_SESSION_TIMEOUT} minutes"
-	echo "  - Language: ${LAM_LANGUAGE}"
-	echo "  - Timezone: ${LAM_TIMEZONE}"
+	echo "  - Log level: ${LAM_LOG_LEVEL}"
+	echo "  - Language: ${LAM_PROFILE_LANGUAGE}"
+	echo "  - Timezone: ${LAM_PROFILE_TIMEZONE}"
 }
 
 configureLAMServerProfile () {
@@ -454,10 +459,10 @@ configureLAMServerProfile () {
 	fi
 	
 	# Parse UID/GID ranges
-	local user_uid_min=$(echo "${LAM_USER_UID_RANGE}" | cut -d'-' -f1)
-	local user_uid_max=$(echo "${LAM_USER_UID_RANGE}" | cut -d'-' -f2)
-	local group_gid_min=$(echo "${LAM_GROUP_GID_RANGE}" | cut -d'-' -f1)
-	local group_gid_max=$(echo "${LAM_GROUP_GID_RANGE}" | cut -d'-' -f2)
+	local user_uid_min=$(echo "${LAM_UID_RANGE}" | cut -d'-' -f1)
+	local user_uid_max=$(echo "${LAM_UID_RANGE}" | cut -d'-' -f2)
+	local group_gid_min=$(echo "${LAM_GID_RANGE}" | cut -d'-' -f1)
+	local group_gid_max=$(echo "${LAM_GID_RANGE}" | cut -d'-' -f2)
 	
 	# Determine LDAP connection settings
 	local server_url
@@ -495,6 +500,21 @@ configureLAMServerProfile () {
 	# Generate profile password hash
 	LAM_PROFILE_HASH=$(echo -n "${LAM_PROFILE_PASSWORD}" | sha256sum | awk '{print $1}')
 	
+	# Build user and group suffix DNs (relative suffix + base DN)
+	local user_suffix_dn="${LAM_USER_SUFFIX},${DOMAIN_DC}"
+	local group_suffix_dn="${LAM_GROUP_SUFFIX},${DOMAIN_DC}"
+	
+	# Parse module lists (convert comma-separated to JSON array format)
+	IFS=',' read -ra USER_MODULES_ARRAY <<< "${LAM_USER_MODULES}"
+	IFS=',' read -ra GROUP_MODULES_ARRAY <<< "${LAM_GROUP_MODULES}"
+	
+	# Build JSON arrays for modules
+	local user_modules_json=$(printf ',"%s"' "${USER_MODULES_ARRAY[@]}")
+	user_modules_json="[${user_modules_json:1}]"  # Remove leading comma and wrap in brackets
+	
+	local group_modules_json=$(printf ',"%s"' "${GROUP_MODULES_ARRAY[@]}")
+	group_modules_json="[${group_modules_json:1}]"
+	
 	# Create server profile with proper JSON format for modern LAM
 	local profile_file="/var/lib/lam/config/${clean_profile_name}.conf"
 	
@@ -508,26 +528,26 @@ configureLAMServerProfile () {
 	"treesuffix": "${DOMAIN_DC}",
 	"Admins": ["cn=Administrator,cn=Users,${DOMAIN_DC}"],
 	"Passwd": "{SHA256}${LAM_PROFILE_HASH}",
-	"searchLimit": ${LAM_SEARCH_LIMIT},
+	"searchLimit": 0,
 	"accessLevel": 100,
 	"loginMethod": "search",
 	"loginSearchSuffix": "${DOMAIN_DC}",
 	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
 	"activeTypes": "user,group",
 	"modules": {
-		"user": ["windowsUser", "posixAccount"],
-		"group": ["windowsGroup", "posixGroup"]
+		"user": ${user_modules_json},
+		"group": ${group_modules_json}
 	},
 	"types": {
 		"user": {
-			"suffix": "cn=Users,${DOMAIN_DC}",
+			"suffix": "${user_suffix_dn}",
 			"attr": ["#sAMAccountName", "#givenName", "#sn", "#mail"],
-			"modules": "windowsUser,posixAccount"
+			"modules": "${LAM_USER_MODULES}"
 		},
 		"group": {
-			"suffix": "cn=Users,${DOMAIN_DC}",
+			"suffix": "${group_suffix_dn}",
 			"attr": ["#cn", "#description", "#member"],
-			"modules": "windowsGroup,posixGroup"
+			"modules": "${LAM_GROUP_MODULES}"
 		}
 	},
 	"moduleSettings": {
@@ -553,9 +573,12 @@ EOF
 	echo "  - Profile name: ${clean_profile_name}"
 	echo "  - LDAP method: ${LAM_LDAP_METHOD} (${server_url})"
 	echo "  - Base DN: ${DOMAIN_DC}"
+	echo "  - User suffix: ${user_suffix_dn}"
+	echo "  - Group suffix: ${group_suffix_dn}"
+	echo "  - User modules: ${LAM_USER_MODULES}"
+	echo "  - Group modules: ${LAM_GROUP_MODULES}"
 	echo "  - User UID range: ${user_uid_min}-${user_uid_max}"
 	echo "  - Group GID range: ${group_gid_min}-${group_gid_max}"
-	echo "  - Search limit: ${LAM_SEARCH_LIMIT}"
 }
 
 configureLAM () {
