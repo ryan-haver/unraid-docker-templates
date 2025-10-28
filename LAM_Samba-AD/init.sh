@@ -59,6 +59,10 @@ appSetup () {
 	RPCPORTS=${RPCPORTS:-"49152-49172"}
 	DOMAIN_DC=${DOMAIN_DC:-${DOMAIN_DC}}
 	LAM_PASSWORD=${LAM_PASSWORD:-lam}
+	LOGLEVEL=${LOGLEVEL:-1}
+	NTPSERVER=${NTPSERVER:-pool.ntp.org}
+	HOSTNETBIOS=${HOSTNETBIOS:-}
+	MULTICASTDNS=${MULTICASTDNS:-yes}
 	
 	LDOMAIN=${DOMAIN,,}
 	UDOMAIN=${DOMAIN^^}
@@ -79,9 +83,19 @@ appSetup () {
 		HOSTIP_OPTION=""
 	fi
 
-	# Set proper hostname for Samba (use first part of domain as hostname)
+	# Set NetBIOS name option if provided
+	if [[ -n "$HOSTNETBIOS" ]] && [[ "$HOSTNETBIOS" != "NONE" ]]; then
+		NETBIOS_OPTION="--host-name=$HOSTNETBIOS"
+	else
+		NETBIOS_OPTION=""
+	fi
+
+	# Set proper hostname for Samba (use HOSTNAME variable if provided, otherwise default to {DOMAIN}DC)
 	# This prevents DNS registration errors with random Docker container IDs
-	HOSTNAME="${URDOMAIN}DC"
+	if [[ -z "$HOSTNAME" ]] || [[ "$HOSTNAME" == "NONE" ]]; then
+		HOSTNAME="${URDOMAIN}DC"
+	fi
+	echo "Setting hostname to: $HOSTNAME"
 	hostname "$HOSTNAME"
 	echo "$HOSTNAME" > /etc/hostname
 	echo "127.0.0.1 localhost $HOSTNAME $HOSTNAME.${LDOMAIN}" > /etc/hosts
@@ -107,7 +121,7 @@ appSetup () {
 				samba-tool domain join ${LDOMAIN} DC -U"${URDOMAIN}\administrator" --password="${DOMAINPASS}" --dns-backend=SAMBA_INTERNAL --site=${JOINSITE}
 			fi
 		else
-			samba-tool domain provision --use-rfc2307 --domain=${URDOMAIN} --realm=${UDOMAIN} --server-role=dc --dns-backend=SAMBA_INTERNAL --adminpass=${DOMAINPASS} ${HOSTIP_OPTION}
+			samba-tool domain provision --use-rfc2307 --domain=${URDOMAIN} --realm=${UDOMAIN} --server-role=dc --dns-backend=SAMBA_INTERNAL --adminpass=${DOMAINPASS} ${HOSTIP_OPTION} ${NETBIOS_OPTION}
 			if [[ ${NOCOMPLEXITY,,} == "true" ]]; then
 				samba-tool domain passwordsettings set --complexity=off
 				samba-tool domain passwordsettings set --history-length=0
@@ -123,7 +137,8 @@ appSetup () {
 			idmap config ${URDOMAIN} : schema_mode = rfc2307\\n\
 			idmap config ${URDOMAIN} : unix_nss_info = yes\\n\
 			idmap config ${URDOMAIN} : backend = ad\\n\
-			rpc server dynamic port range = ${RPCPORTS}\
+			rpc server dynamic port range = ${RPCPORTS}\\n\
+			log level = ${LOGLEVEL}\
 			" /etc/samba/smb.conf
 		sed -i "s/LOCALDC/${URDOMAIN}DC/g" /etc/samba/smb.conf
 		if [[ $DNSFORWARDER != "NONE" ]]; then
@@ -135,6 +150,11 @@ appSetup () {
 		if [[ ${INSECURELDAP,,} == "true" ]]; then
 			sed -i "/\[global\]/a \
 				\\\tldap server require strong auth = no\
+				" /etc/samba/smb.conf
+		fi
+		if [[ ${MULTICASTDNS,,} == "yes" ]] || [[ ${MULTICASTDNS,,} == "true" ]]; then
+			sed -i "/\[global\]/a \
+				\\\tmulticast dns register = yes\
 				" /etc/samba/smb.conf
 		fi
 		# Once we are set up, we'll make a file so that we know to use it if we ever spin this up again
@@ -175,17 +195,17 @@ appSetup () {
 
 	echo "server 127.127.1.0" > /etc/ntpd.conf
 	echo "fudge  127.127.1.0 stratum 10" >> /etc/ntpd.conf
-	echo "server 0.pool.ntp.org     iburst prefer" >> /etc/ntpd.conf
-	echo "server 1.pool.ntp.org     iburst prefer" >> /etc/ntpd.conf
-	echo "server 2.pool.ntp.org     iburst prefer" >> /etc/ntpd.conf
+	echo "server 0.${NTPSERVER}     iburst prefer" >> /etc/ntpd.conf
+	echo "server 1.${NTPSERVER}     iburst prefer" >> /etc/ntpd.conf
+	echo "server 2.${NTPSERVER}     iburst prefer" >> /etc/ntpd.conf
 	echo "driftfile       /var/lib/ntp/ntp.drift" >> /etc/ntpd.conf
 	echo "logfile         /var/log/ntp" >> /etc/ntpd.conf
 	echo "ntpsigndsocket  /usr/local/samba/var/lib/ntp_signd/" >> /etc/ntpd.conf
 	echo "restrict default kod nomodify notrap nopeer mssntp" >> /etc/ntpd.conf
 	echo "restrict 127.0.0.1" >> /etc/ntpd.conf
-	echo "restrict 0.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-	echo "restrict 1.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-	echo "restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
+	echo "restrict 0.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
+	echo "restrict 1.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
+	echo "restrict 2.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
 	echo "tinker panic 0" >> /etc/ntpd.conf
 
 	appStart ${FIRSTRUN}

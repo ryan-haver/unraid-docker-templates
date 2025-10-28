@@ -128,9 +128,6 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <!-- NO PORT MAPPINGS - MACVLAN uses dedicated IP -->
   <!-- All standard ports (53, 88, 135, 137-139, 389, 445, 464, 636, 3268, 3269) + LAM port 8080 available on container IP -->
   
-  <!-- MACVLAN NETWORK CONFIGURATION -->
-  <Config Name="Container IP Address" Target="CONTAINER_IP" Default="192.168.1.200" Mode="" Description="REQUIRED: Dedicated IP for container (e.g., 192.168.1.200). Must be in MACVLAN network range and not used by other devices. This becomes the container's network identity." Type="Variable" Display="always" Required="true" Mask="false">192.168.1.200</Config>
-  
   <!-- ESSENTIAL DOMAIN CONFIGURATION -->
   <Config Name="Domain Name" Target="DOMAIN" Default="example.local" Mode="" Description="REQUIRED: Domain FQDN (e.g., example.com, CORP.EXAMPLE.COM). Choose carefully - difficult to change later." Type="Variable" Display="always" Required="true" Mask="false">example.local</Config>
   <Config Name="Domain Admin Password" Target="DOMAINPASS" Default="ChangeMe123!@#" Mode="" Description="REQUIRED: Strong Administrator password for Samba AD. Minimum 12+ characters with complexity. Document securely." Type="Variable" Display="always" Required="true" Mask="true">ChangeMe123!@#</Config>
