@@ -50,8 +50,9 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
     rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
     rm -fr /tmp/* /var/tmp/*
 
-# Download and install LAM from GitHub releases (most reliable from GitHub Actions)
-RUN wget -O /tmp/lam.tar.bz2 \
+# Download and install LAM from GitHub releases
+# curl handles GitHub redirects better than wget
+RUN curl -L -o /tmp/lam.tar.bz2 \
     "https://github.com/LDAPAccountManager/lam/releases/download/9.3/ldap-account-manager-9.3.tar.bz2" && \
     mkdir -p /var/www/html && \
     tar -xjf /tmp/lam.tar.bz2 -C /var/www/html && \
