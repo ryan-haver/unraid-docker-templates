@@ -123,13 +123,13 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <!-- All standard ports (53, 88, 135, 137-139, 389, 445, 464, 636, 3268, 3269) + LAM port 8080 available on container IP -->
   
   <!-- MACVLAN NETWORK CONFIGURATION -->
-  <Config Name="Container IP Address" Target="CONTAINER_IP" Default="" Mode="" Description="REQUIRED: Dedicated IP for container (e.g., 192.168.1.200). Must be in MACVLAN network range and not used by other devices. This becomes the container's network identity." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Container IP Address" Target="CONTAINER_IP" Default="192.168.1.200" Mode="" Description="REQUIRED: Dedicated IP for container (e.g., 192.168.1.200). Must be in MACVLAN network range and not used by other devices. This becomes the container's network identity." Type="Variable" Display="always" Required="true" Mask="false">192.168.1.200</Config>
   
   <!-- ESSENTIAL DOMAIN CONFIGURATION -->
-  <Config Name="Domain Name" Target="DOMAIN" Default="" Mode="" Description="REQUIRED: Domain FQDN (e.g., example.com, CORP.EXAMPLE.COM). Choose carefully - difficult to change later." Type="Variable" Display="always" Required="true" Mask="false"></Config>
-  <Config Name="Domain Admin Password" Target="DOMAINPASS" Default="" Mode="" Description="REQUIRED: Strong Administrator password for Samba AD. Minimum 12+ characters with complexity. Document securely." Type="Variable" Display="always" Required="true" Mask="true"></Config>
-  <Config Name="Host IP Address" Target="HOSTIP" Default="" Mode="" Description="REQUIRED: MUST MATCH Container IP Address above. This tells Samba what IP to advertise. Example: 192.168.1.200" Type="Variable" Display="always" Required="true" Mask="false"></Config>
-  <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false"></Config>
+  <Config Name="Domain Name" Target="DOMAIN" Default="example.local" Mode="" Description="REQUIRED: Domain FQDN (e.g., example.com, CORP.EXAMPLE.COM). Choose carefully - difficult to change later." Type="Variable" Display="always" Required="true" Mask="false">example.local</Config>
+  <Config Name="Domain Admin Password" Target="DOMAINPASS" Default="ChangeMe123!@#" Mode="" Description="REQUIRED: Strong Administrator password for Samba AD. Minimum 12+ characters with complexity. Document securely." Type="Variable" Display="always" Required="true" Mask="true">ChangeMe123!@#</Config>
+  <Config Name="Host IP Address" Target="HOSTIP" Default="192.168.1.200" Mode="" Description="REQUIRED: MUST MATCH Container IP Address above. This tells Samba what IP to advertise. Example: 192.168.1.200" Type="Variable" Display="always" Required="true" Mask="false">192.168.1.200</Config>
+  <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="192.168.1.1" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.1</Config>
   
   <!-- LAM WEB INTERFACE CONFIGURATION -->
   <Config Name="LAM Master Password" Target="LAM_PASSWORD" Default="lam" Mode="" Description="REQUIRED: Master password for LAM web interface configuration (CHANGE THIS!). Used to access LAM configuration at http://[CONTAINER-IP]:8080" Type="Variable" Display="always" Required="true" Mask="true">lam</Config>
