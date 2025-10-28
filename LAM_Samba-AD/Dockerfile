@@ -12,8 +12,8 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
     apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository ppa:ondrej/php -y && \
     apt-get update --fix-missing || apt-get update && \
-    apt-get install -y --no-install-recommends \
-        # Original Samba AD packages
+    apt-get install -y \
+        # Original Samba AD packages (with recommended packages for proper module loading)
         pkg-config \
         attr \
         acl \
@@ -34,7 +34,8 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
         dnsutils \
         ntp \
         jq \
-        bzip2 \
+        bzip2 && \
+    apt-get install -y --no-install-recommends \
         # LAM Web Interface dependencies (PHP 8.1 from ondrej PPA)
         nginx \
         php8.1-fpm \
