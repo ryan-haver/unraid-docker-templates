@@ -34,7 +34,8 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
         dnsutils \
         ntp \
         jq \
-        bzip2 && \
+        bzip2 \
+        openssl && \
     apt-get install -y --no-install-recommends \
         # LAM Web Interface dependencies (PHP 8.1 from ondrej PPA)
         nginx \

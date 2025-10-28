@@ -24,6 +24,15 @@ This combined approach is designed for lab/testing environments. For production 
 • NTP time synchronization
 • Supervisord process management
 • All standard AD DC services (DNS, LDAP, Kerberos, SMB)
+• Auto-generated self-signed TLS certificate with IP address SAN
+
+**🔒 TLS CERTIFICATE NOTICE:**
+This container automatically generates a self-signed TLS certificate that includes:
+• DC hostname (e.g., HAVERDC.haver.internal)
+• Domain name (e.g., haver.internal)
+• Container IP address (e.g., 192.168.1.115)
+
+⚠️ **NOT FOR PRODUCTION:** Self-signed certificates will cause trust warnings in clients and are not suitable for production environments. For production use, replace with certificates from a trusted Certificate Authority.
 
 **MACVLAN PREREQUISITES:**
 • Create MACVLAN network first: Settings → Docker → Custom Networks → Add Network

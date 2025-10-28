@@ -204,6 +204,86 @@ appSetup () {
 	appStart ${FIRSTRUN}
 }
 
+regenerateSambaTLSCertificate () {
+	echo "Regenerating Samba TLS certificate with IP address SAN..."
+	
+	# Get the actual IP address
+	local actual_ip=$(ip -4 addr show | grep -v "127.0.0.1" | grep "inet " | head -1 | awk '{print $2}' | cut -d'/' -f1)
+	
+	if [[ -z "$actual_ip" ]]; then
+		echo "WARNING: Could not detect IP address, skipping certificate regeneration"
+		return 1
+	fi
+	
+	local cert_dir="/var/lib/samba/private/tls"
+	local key_file="${cert_dir}/key.pem"
+	local cert_file="${cert_dir}/cert.pem"
+	local ca_file="${cert_dir}/ca.pem"
+	
+	# Backup original certificate
+	if [[ -f "$cert_file" ]] && [[ ! -f "${cert_file}.original" ]]; then
+		cp "$cert_file" "${cert_file}.original"
+		echo "Original certificate backed up to ${cert_file}.original"
+	fi
+	
+	# Create OpenSSL config for certificate with SANs
+	cat > /tmp/openssl-san.cnf <<EOF
+[req]
+default_bits = 4096
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = v3_req
+
+[dn]
+CN = ${HOSTNAME}.${LDOMAIN}
+O = ${UDOMAIN}
+OU = Domain Controllers
+
+[v3_req]
+subjectAltName = @alt_names
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+
+[alt_names]
+DNS.1 = ${HOSTNAME}.${LDOMAIN}
+DNS.2 = ${LDOMAIN}
+DNS.3 = ${HOSTNAME}
+IP.1 = ${actual_ip}
+EOF
+	
+	echo "Generating new private key and certificate..."
+	# Generate new private key
+	openssl genrsa -out "${key_file}.new" 4096 2>/dev/null
+	
+	# Generate new self-signed certificate with SANs
+	openssl req -new -x509 -days 3650 -key "${key_file}.new" -out "${cert_file}.new" \
+		-config /tmp/openssl-san.cnf -extensions v3_req 2>/dev/null
+	
+	# Replace old certificate and key
+	mv "${key_file}.new" "$key_file"
+	mv "${cert_file}.new" "$cert_file"
+	
+	# Copy cert as CA (self-signed)
+	cp "$cert_file" "$ca_file"
+	
+	# Set proper permissions
+	chmod 600 "$key_file"
+	chmod 644 "$cert_file"
+	chmod 644 "$ca_file"
+	
+	echo "Certificate regenerated successfully with:"
+	echo "  - DNS: ${HOSTNAME}.${LDOMAIN}"
+	echo "  - DNS: ${LDOMAIN}"
+	echo "  - DNS: ${HOSTNAME}"
+	echo "  - IP: ${actual_ip}"
+	echo ""
+	echo "WARNING: This is a self-signed certificate. Not recommended for production!"
+	
+	# Clean up
+	rm -f /tmp/openssl-san.cnf
+}
+
 fixDomainUsersGroup () {
 	GIDNUMBER=$(ldbedit -H /var/lib/samba/private/sam.ldb -e cat "samaccountname=domain users" | { grep ^gidNumber: || true; })
 	if [ -z "${GIDNUMBER}" ]; then
@@ -418,6 +498,8 @@ appStart () {
 		sleep 10
 		fixDomainUsersGroup
 		setupSSH
+		echo "Regenerating TLS certificate with IP address..."
+		regenerateSambaTLSCertificate
 		echo "Sleeping additional 5 seconds before configuring LAM..."
 		sleep 5
 		configureLAM
