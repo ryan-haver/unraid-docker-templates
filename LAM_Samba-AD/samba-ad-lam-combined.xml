@@ -144,23 +144,22 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   
   <!-- ADVANCED DOMAIN SETTINGS -->
   <Config Name="Domain DN" Target="DOMAIN_DC" Default="" Mode="" Description="OPTIONAL: Domain DN format (e.g., dc=example,dc=com). Auto-generated from DOMAIN if empty. LAM uses this for LDAP Base DN." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
-  <Config Name="Domain Email" Target="DOMAIN_EMAIL" Default="" Mode="" Description="OPTIONAL: Email domain for user accounts (e.g., example.com). Different from AD domain. Used by domain.sh script." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
-  <Config Name="DC Hostname" Target="HOSTNAME" Default="" Mode="" Description="OPTIONAL: Domain controller hostname. Auto-generated if empty." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="DC Hostname" Target="HOSTNAME" Default="" Mode="" Description="OPTIONAL: Domain controller hostname (e.g., HAVERDC01). If empty, auto-generates as {DOMAIN}DC. Used for DNS registration and system identification." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   
   <!-- SECURITY SETTINGS -->
   <Config Name="Insecure LDAP" Target="INSECURELDAP" Default="false" Mode="" Description="SECURITY: false = Require encrypted LDAP (recommended). true = Allow unencrypted LDAP. LAM connects via LDAPS by default." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   <Config Name="No Password Complexity" Target="NOCOMPLEXITY" Default="false" Mode="" Description="SECURITY: false = Enforce password complexity (recommended). true = Disable complexity." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   
   <!-- NETWORK SETTINGS -->
-  <Config Name="Multicast DNS" Target="MULTICASTDNS" Default="yes" Mode="" Description="Enable multicast DNS for service discovery. Recommended for mixed environments." Type="Variable" Display="advanced" Required="false" Mask="false">yes</Config>
-  <Config Name="NetBIOS Name" Target="HOSTNETBIOS" Default="" Mode="" Description="OPTIONAL: NetBIOS name for DC. Auto-generated if empty." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+  <Config Name="Multicast DNS" Target="MULTICASTDNS" Default="yes" Mode="" Description="Enable multicast DNS (mDNS) for service discovery. Allows clients to find DC via .local domain. Recommended: yes" Type="Variable" Display="advanced" Required="false" Mask="false">yes</Config>
+  <Config Name="NetBIOS Name" Target="HOSTNETBIOS" Default="" Mode="" Description="OPTIONAL: NetBIOS name for DC (15 chars max). If empty, auto-generated from hostname. Used for legacy Windows networking." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   
   <!-- LOGGING -->
-  <Config Name="Log Level" Target="LOGLEVEL" Default="1" Mode="" Description="Samba log verbosity: 0=errors, 1=minimal (recommended), 3=detailed, 10=debug." Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Log Level" Target="LOGLEVEL" Default="1" Mode="" Description="Samba log verbosity. 0=errors only, 1=minimal (recommended), 3=detailed, 10=full debug. Higher levels generate more logs." Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   
   <!-- TIME SYNC -->
-  <Config Name="NTP Server" Target="NTPSERVER" Default="pool.ntp.org" Mode="" Description="NTP server for internal time synchronization. Critical for Kerberos operation." Type="Variable" Display="advanced" Required="false" Mask="false">pool.ntp.org</Config>
-  <Config Name="Timezone" Target="TZ" Default="America/Denver" Mode="" Description="Container timezone. Should match Unraid host timezone." Type="Variable" Display="advanced" Required="false" Mask="false">America/Denver</Config>
+  <Config Name="NTP Server" Target="NTPSERVER" Default="pool.ntp.org" Mode="" Description="NTP server pool for time synchronization. Critical for Kerberos. Uses 0/1/2.{server} subdomain rotation. Default: pool.ntp.org" Type="Variable" Display="advanced" Required="false" Mask="false">pool.ntp.org</Config>
+  <Config Name="Timezone" Target="TZ" Default="America/Denver" Mode="" Description="Container timezone (informational). Actual timezone set via /etc/localtime volume mount. Should match Unraid host." Type="Variable" Display="advanced" Required="false" Mask="false">America/Denver</Config>
   
   <!-- RPC PORT RANGE -->
   <Config Name="RPC Port Range" Target="RPCPORTS" Default="49152-49172" Mode="" Description="ADVANCED: RPC dynamic port range for Samba. Default 49152-49172 is recommended." Type="Variable" Display="advanced" Required="false" Mask="false">49152-49172</Config>
