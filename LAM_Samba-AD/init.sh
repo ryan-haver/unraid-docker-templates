@@ -2,7 +2,32 @@
 
 set -e
 
+waitForNetwork() {
+	echo "Waiting for network interface to be ready..."
+	local max_wait=30
+	local waited=0
+	
+	while [ $waited -lt $max_wait ]; do
+		# Check if we have any network interfaces besides lo
+		if ip addr show | grep -q "inet.*brd"; then
+			echo "Network interface is ready"
+			# Additional wait to ensure network is fully initialized
+			sleep 2
+			return 0
+		fi
+		echo "Waiting for network... ($waited/$max_wait)"
+		sleep 1
+		waited=$((waited + 1))
+	done
+	
+	echo "WARNING: Network interface not detected after ${max_wait}s, continuing anyway..."
+	return 0
+}
+
 appSetup () {
+
+	# Wait for network to be ready (critical for MACVLAN)
+	waitForNetwork
 
 	# Set variables
 	DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
