@@ -62,6 +62,7 @@ appSetup () {
 	LOGLEVEL=${LOGLEVEL:-1}
 	NTPSERVER=${NTPSERVER:-pool.ntp.org}
 	MULTICASTDNS=${MULTICASTDNS:-yes}
+	REGENERATE_CERT=${REGENERATE_CERT:-true}
 	
 	LDOMAIN=${DOMAIN,,}
 	UDOMAIN=${DOMAIN^^}
@@ -498,8 +499,13 @@ appStart () {
 		sleep 10
 		fixDomainUsersGroup
 		setupSSH
-		echo "Regenerating TLS certificate with IP address..."
-		regenerateSambaTLSCertificate
+		if [[ ${REGENERATE_CERT,,} == "true" ]]; then
+			echo "Regenerating TLS certificate with IP address..."
+			regenerateSambaTLSCertificate
+		else
+			echo "Certificate regeneration disabled (REGENERATE_CERT=false)"
+			echo "Using Samba's default self-signed certificate (hostname + domain only)"
+		fi
 		echo "Sleeping additional 5 seconds before configuring LAM..."
 		sleep 5
 		configureLAM
