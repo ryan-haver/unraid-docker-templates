@@ -51,9 +51,9 @@ RUN apt-get update --fix-missing || apt-get update --fix-missing || apt-get upda
     rm -fr /tmp/* /var/tmp/*
 
 # Download and install LAM from official SourceForge
-# Using SourceForge's latest release redirect with retry
+# Using latest release redirect - wget must follow redirects properly
 RUN wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 --tries=3 \
-    --content-disposition -O /tmp/lam.tar.bz2 \
+    --max-redirect=5 -O /tmp/lam.tar.bz2 \
     "https://sourceforge.net/projects/lam/files/latest/download" && \
     mkdir -p /var/www/html && \
     tar -xjf /tmp/lam.tar.bz2 -C /var/www/html && \
