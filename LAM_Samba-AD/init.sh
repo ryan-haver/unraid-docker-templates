@@ -61,7 +61,6 @@ appSetup () {
 	LAM_PASSWORD=${LAM_PASSWORD:-lam}
 	LOGLEVEL=${LOGLEVEL:-1}
 	NTPSERVER=${NTPSERVER:-pool.ntp.org}
-	HOSTNETBIOS=${HOSTNETBIOS:-}
 	MULTICASTDNS=${MULTICASTDNS:-yes}
 	
 	LDOMAIN=${DOMAIN,,}
@@ -83,15 +82,9 @@ appSetup () {
 		HOSTIP_OPTION=""
 	fi
 
-	# Set NetBIOS name option if provided
-	if [[ -n "$HOSTNETBIOS" ]] && [[ "$HOSTNETBIOS" != "NONE" ]]; then
-		NETBIOS_OPTION="--host-name=$HOSTNETBIOS"
-	else
-		NETBIOS_OPTION=""
-	fi
-
 	# Set proper hostname for Samba (use HOSTNAME variable if provided, otherwise default to {DOMAIN}DC)
 	# This prevents DNS registration errors with random Docker container IDs
+	# NetBIOS name is auto-derived from hostname (first 15 chars, uppercase)
 	if [[ -z "$HOSTNAME" ]] || [[ "$HOSTNAME" == "NONE" ]]; then
 		HOSTNAME="${URDOMAIN}DC"
 	fi
@@ -121,7 +114,7 @@ appSetup () {
 				samba-tool domain join ${LDOMAIN} DC -U"${URDOMAIN}\administrator" --password="${DOMAINPASS}" --dns-backend=SAMBA_INTERNAL --site=${JOINSITE}
 			fi
 		else
-			samba-tool domain provision --use-rfc2307 --domain=${URDOMAIN} --realm=${UDOMAIN} --server-role=dc --dns-backend=SAMBA_INTERNAL --adminpass=${DOMAINPASS} ${HOSTIP_OPTION} ${NETBIOS_OPTION}
+			samba-tool domain provision --use-rfc2307 --domain=${URDOMAIN} --realm=${UDOMAIN} --server-role=dc --dns-backend=SAMBA_INTERNAL --adminpass=${DOMAINPASS} ${HOSTIP_OPTION}
 			if [[ ${NOCOMPLEXITY,,} == "true" ]]; then
 				samba-tool domain passwordsettings set --complexity=off
 				samba-tool domain passwordsettings set --history-length=0
