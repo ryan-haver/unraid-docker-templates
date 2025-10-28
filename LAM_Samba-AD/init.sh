@@ -4,41 +4,35 @@ set -e
 
 waitForNetwork() {
 	echo "Waiting for network interface to be ready..."
-	echo "DEBUG: HOSTIP=${1:-NONE}"
-	echo "DEBUG: Initial network status:"
-	ip addr show || echo "ip command failed"
+	local hostip="${1:-NONE}"
+	echo "DEBUG: Expected HOSTIP=$hostip"
 	
 	local max_wait=30
 	local waited=0
-	local hostip="${1:-NONE}"
 	
 	while [ $waited -lt $max_wait ]; do
-		# Check if we have a non-loopback interface with an IP address
+		# Check if we have a non-loopback interface with an IP address (recalculate every iteration)
 		local has_ip=$(ip -4 addr show 2>/dev/null | grep -v "127.0.0.1" | grep "inet " | wc -l)
 		
-		# Check if the HOSTIP variable is set and matches our actual IP
-		if [ "$hostip" != "NONE" ] && [ -n "$hostip" ]; then
-			if ip addr show 2>/dev/null | grep -q "$hostip"; then
-				echo "Network interface ready: found expected IP $hostip"
-				return 0
-			fi
-		elif [ $has_ip -gt 0 ]; then
-			# No HOSTIP specified, just check for any non-loopback IP
+		# If we have any IP, we're ready (HOSTIP is just a hint for the container, actual IP may differ)
+		if [ $has_ip -gt 0 ]; then
 			local current_ip=$(ip -4 addr show 2>/dev/null | grep -v "127.0.0.1" | grep "inet " | head -1 | awk '{print $2}' | cut -d'/' -f1)
 			echo "Network interface ready: found IP $current_ip"
+			if [ "$hostip" != "NONE" ] && [ "$current_ip" != "$hostip" ]; then
+				echo "NOTE: Actual IP ($current_ip) differs from expected HOSTIP ($hostip) - this is normal with DHCP/MACVLAN"
+			fi
 			return 0
 		fi
 		
 		if [ $waited -eq 0 ]; then
-			echo "DEBUG: Network check - Interfaces: $(ip link show 2>/dev/null | grep '^[0-9]' | cut -d':' -f2 | tr '\n' ' ')"
+			echo "DEBUG: Waiting for network interface to appear..."
 		fi
 		
-		echo "Waiting for network... (IP count: $has_ip) - $waited/$max_wait"
 		sleep 1
 		waited=$((waited + 1))
 	done
 	
-	echo "WARNING: Expected network not found after ${max_wait}s"
+	echo "WARNING: No network interface found after ${max_wait}s"
 	echo "Current network status:"
 	ip addr show 2>/dev/null || echo "Cannot show IP addresses"
 	return 0
@@ -83,6 +77,16 @@ appSetup () {
 		HOSTIP_OPTION="--host-ip=$HOSTIP"
 	else
 		HOSTIP_OPTION=""
+	fi
+
+	# Set proper hostname for Samba (use first part of domain as hostname)
+	# This prevents DNS registration errors with random Docker container IDs
+	HOSTNAME="${URDOMAIN}DC"
+	hostname "$HOSTNAME"
+	echo "$HOSTNAME" > /etc/hostname
+	echo "127.0.0.1 localhost $HOSTNAME $HOSTNAME.${LDOMAIN}" > /etc/hosts
+	if [[ "$HOSTIP" != "NONE" ]]; then
+		echo "$HOSTIP $HOSTNAME.$LDOMAIN $HOSTNAME" >> /etc/hosts
 	fi
 
 	# Set up samba
