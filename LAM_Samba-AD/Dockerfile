@@ -6,9 +6,14 @@ LABEL version="1.0.0"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Samba AD DC dependencies (from original nowsci/samba-domain)
+# Add ondrej/php PPA for newer PHP versions (LAM requires PHP >= 8.1.10)
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:ondrej/php -y && \
+    apt-get update
+
+# Install Samba AD DC dependencies (from original nowsci/samba-domain)
+RUN apt-get install -y \
         # Original Samba AD packages
         pkg-config \
         attr \
@@ -30,7 +35,7 @@ RUN apt-get update && \
         dnsutils \
         ntp \
         jq \
-        # NEW: LAM Web Interface dependencies
+        # NEW: LAM Web Interface dependencies (PHP 8.1 from ondrej PPA)
         nginx \
         php8.1-fpm \
         php8.1-ldap \
