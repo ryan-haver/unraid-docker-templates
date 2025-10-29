@@ -196,6 +196,9 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <!-- LOGGING -->
   <Config Name="Log Level" Target="LOGLEVEL" Default="1" Mode="" Description="Samba log verbosity. 0=errors only, 1=minimal (recommended), 3=detailed, 10=full debug. DNS routine messages automatically suppressed (dns:0) to reduce log noise while keeping DNS refresh active." Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   
+  <!-- NETWORK OPTIMIZATION -->
+  <Config Name="Disable IPv6" Target="DISABLE_IPV6" Default="true" Mode="" Description="Disable IPv6 in container to eliminate IPv6 binding warnings. Set to false if you need IPv6 support." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  
   <!-- TIME SYNC -->
   <Config Name="NTP Server" Target="NTPSERVER" Default="pool.ntp.org" Mode="" Description="NTP server pool for time synchronization. Critical for Kerberos. Uses 0/1/2.{server} subdomain rotation. Default: pool.ntp.org" Type="Variable" Display="advanced" Required="false" Mask="false">pool.ntp.org</Config>
   <Config Name="Timezone" Target="TZ" Default="America/Denver" Mode="" Description="Container timezone (informational). Actual timezone set via /etc/localtime volume mount. Should match Unraid host." Type="Variable" Display="advanced" Required="false" Mask="false">America/Denver</Config>

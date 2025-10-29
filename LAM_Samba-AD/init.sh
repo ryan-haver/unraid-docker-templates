@@ -42,6 +42,16 @@ appSetup () {
 
 	# Set variables early so waitForNetwork can use them
 	HOSTIP=${HOSTIP:-NONE}
+	DISABLE_IPV6=${DISABLE_IPV6:-true}
+	
+	# Disable IPv6 if requested (reduces binding warnings)
+	if [[ ${DISABLE_IPV6,,} == "true" ]]; then
+		echo "Disabling IPv6 in container..."
+		sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1 || true
+		sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1 || true
+		sysctl -w net.ipv6.conf.lo.disable_ipv6=1 >/dev/null 2>&1 || true
+		echo "IPv6 disabled"
+	fi
 
 	# Wait for network to be ready (critical for MACVLAN)
 	waitForNetwork "$HOSTIP"
@@ -72,7 +82,7 @@ appSetup () {
 	LAM_GROUP_SUFFIX=${LAM_GROUP_SUFFIX:-CN=Users}
 	LAM_USER_MODULES=${LAM_USER_MODULES:-windowsUser,inetOrgPerson}
 	LAM_GROUP_MODULES=${LAM_GROUP_MODULES:-windowsGroup}
-	LAM_PROFILE_LANGUAGE=${LAM_PROFILE_LANGUAGE:-en_GB.utf8:UTF-8:English (UK)}
+	LAM_PROFILE_LANGUAGE=${LAM_PROFILE_LANGUAGE:-en_US.utf8:UTF-8:English (USA)}
 	LAM_PROFILE_TIMEZONE=${LAM_PROFILE_TIMEZONE:-UTC}
 	LAM_UID_RANGE=${LAM_UID_RANGE:-10000-30000}
 	LAM_GID_RANGE=${LAM_GID_RANGE:-10000-30000}
@@ -154,8 +164,7 @@ appSetup () {
 			tls keyfile = /var/lib/samba/private/tls/key.pem\\n\
 			tls certfile = /var/lib/samba/private/tls/cert.pem\\n\
 			tls cafile = /var/lib/samba/private/tls/ca.pem\\n\
-			ldap ssl = start tls\\n\
-			ldap ssl ads = yes\
+			ldap ssl = start tls\
 			" /etc/samba/smb.conf
 		sed -i "s/LOCALDC/${URDOMAIN}DC/g" /etc/samba/smb.conf
 		if [[ $DNSFORWARDER != "NONE" ]]; then
