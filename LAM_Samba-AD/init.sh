@@ -234,6 +234,13 @@ appSetup () {
 		echo "command=/usr/sbin/openvpn --config /docker.ovpn" >> /etc/supervisor/conf.d/supervisord.conf
 	fi
 
+	# Create NTP drift directory for time sync persistence
+	echo "Creating NTP drift directory..."
+	mkdir -p /var/lib/ntp
+	chown ntp:ntp /var/lib/ntp 2>/dev/null || chown root:root /var/lib/ntp
+	
+	# Configure NTP for time synchronization (critical for Kerberos)
+	echo "Configuring NTP time synchronization..."
 	echo "server 127.127.1.0" > /etc/ntpd.conf
 	echo "fudge  127.127.1.0 stratum 10" >> /etc/ntpd.conf
 	echo "server 0.${NTPSERVER}     iburst prefer" >> /etc/ntpd.conf
@@ -241,13 +248,18 @@ appSetup () {
 	echo "server 2.${NTPSERVER}     iburst prefer" >> /etc/ntpd.conf
 	echo "driftfile       /var/lib/ntp/ntp.drift" >> /etc/ntpd.conf
 	echo "logfile         /var/log/ntp" >> /etc/ntpd.conf
+	# NOTE: ntpsigndsocket enables MS-SNTP signing for Samba AD (required for Windows clients)
+	# Warning "MS-SNTP signd operations currently block ntpd" is EXPECTED and can be ignored
 	echo "ntpsigndsocket  /usr/local/samba/var/lib/ntp_signd/" >> /etc/ntpd.conf
 	echo "restrict default kod limited nomodify notrap nopeer mssntp" >> /etc/ntpd.conf
 	echo "restrict 127.0.0.1" >> /etc/ntpd.conf
-	echo "restrict 0.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-	echo "restrict 1.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-	echo "restrict 2.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
+	# Note: Pool servers resolve to multiple IPs, don't use mask parameter
+	echo "restrict 0.${NTPSERVER}   nomodify notrap nopeer noquery" >> /etc/ntpd.conf
+	echo "restrict 1.${NTPSERVER}   nomodify notrap nopeer noquery" >> /etc/ntpd.conf
+	echo "restrict 2.${NTPSERVER}   nomodify notrap nopeer noquery" >> /etc/ntpd.conf
 	echo "tinker panic 0" >> /etc/ntpd.conf
+	# Require at least 3 servers to sync before declaring synchronized (reduces false warnings)
+	echo "tos minclock 3 maxclock 6" >> /etc/ntpd.conf
 
 	appStart ${FIRSTRUN}
 }
