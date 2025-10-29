@@ -85,12 +85,15 @@ appSetup () {
 	
 	# LAM Application Settings (config.cfg)
 	LAM_MASTER_PASSWORD=${LAM_MASTER_PASSWORD:-lam}
-	LAM_DEFAULT_PROFILE=${LAM_DEFAULT_PROFILE:-samba-ad}
 	LAM_SESSION_TIMEOUT=${LAM_SESSION_TIMEOUT:-30}
 	LAM_LOG_LEVEL=${LAM_LOG_LEVEL:-4}
 	
 	# LAM Server Profile Settings (profile.conf)
 	LAM_PROFILE_NAME=${LAM_PROFILE_NAME:-samba-ad}
+	# For backward compatibility, support LAM_DEFAULT_PROFILE but prefer LAM_PROFILE_NAME
+	if [[ -n "${LAM_DEFAULT_PROFILE}" ]] && [[ "${LAM_DEFAULT_PROFILE}" != "samba-ad" ]]; then
+		LAM_PROFILE_NAME="${LAM_DEFAULT_PROFILE}"
+	fi
 	LAM_PROFILE_PASSWORD=${LAM_PROFILE_PASSWORD:-lam}
 	LAM_LDAP_METHOD=${LAM_LDAP_METHOD:-ldaps}
 	LAM_USER_SUFFIX=${LAM_USER_SUFFIX:-CN=Users}
@@ -565,12 +568,13 @@ configureLAMApplication () {
 	cat > /var/www/html/lam/config/config.cfg <<EOF
 {
 	"ServerProfiles": {
-		"${LAM_DEFAULT_PROFILE}": {
-			"name": "${LAM_DEFAULT_PROFILE}",
+		"${LAM_PROFILE_NAME}": {
+			"name": "${LAM_PROFILE_NAME}",
 			"default": true
 		}
 	},
 	"passwordHash": "{SHA256}${LAM_MASTER_HASH}",
+	"default": "${LAM_PROFILE_NAME}",
 	"sessionTimeout": ${LAM_SESSION_TIMEOUT},
 	"allowedHosts": "",
 	"logLevel": "${LAM_LOG_LEVEL}",
@@ -586,7 +590,7 @@ EOF
 	chmod 600 /var/www/html/lam/config/config.cfg
 	
 	echo "✓ LAM application configuration created successfully"
-	echo "  - Default profile: ${LAM_DEFAULT_PROFILE}"
+	echo "  - Default profile: ${LAM_PROFILE_NAME}"
 	echo "  - Session timeout: ${LAM_SESSION_TIMEOUT} minutes"
 	echo "  - Log level: ${LAM_LOG_LEVEL}"
 	echo "  - Language: ${LAM_PROFILE_LANGUAGE}"
@@ -820,7 +824,7 @@ configureLAM () {
 		echo "LAM web interface: http://<host-ip>:8080"
 		echo "Master password: ${LAM_MASTER_PASSWORD}"
 		echo "Profile password: ${LAM_PROFILE_PASSWORD}"
-		echo "Default profile: ${LAM_DEFAULT_PROFILE}"
+		echo "Default profile: ${LAM_PROFILE_NAME}"
 		echo ""
 		echo "Quick Start:"
 		echo "1. Open LAM web interface"
