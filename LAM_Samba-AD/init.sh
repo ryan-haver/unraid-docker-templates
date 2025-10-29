@@ -915,7 +915,7 @@ validateLAMConfiguration () {
 			((config_errors++))
 		fi
 		
-		if ! grep -q "\"activeTypes\": \"user,group\"" "$profile_file"; then
+		if ! grep -q "\"activeTypes\": \[\"user\", \"group\"\]" "$profile_file"; then
 			echo "ERROR: Server profile missing essential activeTypes configuration"
 			((config_errors++))
 		fi
@@ -1031,13 +1031,23 @@ validateRFC2307Schema () {
 		echo "  Unix attributes (uidNumber, gidNumber, loginShell, homeDirectory) are available"
 		return 0
 	else
-		echo "⚠️  WARNING: RFC2307 schema extensions NOT found"
-		echo "   Samba may not have been provisioned with --use-rfc2307 parameter"
-		echo "   Unix/POSIX attributes (uidNumber, gidNumber) may not work properly"
-		echo "   LAM posixAccount/posixGroup modules may fail or behave incorrectly"
+		echo "⚠️  INFORMATIONAL: RFC2307 schema extensions NOT found"
 		echo ""
-		echo "   To fix: Re-provision Samba with: samba-tool domain provision --use-rfc2307"
-		echo "   Note: This requires domain re-provisioning (destructive operation)"
+		echo "   This is NORMAL if you are running a Windows-only Active Directory."
+		echo "   RFC2307 extensions are only needed for Unix/Linux integration."
+		echo ""
+		echo "   Impact:"
+		echo "   - Windows authentication: ✓ Works normally"
+		echo "   - LAM windowsUser/windowsGroup modules: ✓ Work normally"
+		echo "   - Unix attributes (uidNumber, gidNumber): ✗ Not available"
+		echo "   - LAM posixAccount/posixGroup modules: ✗ Will not work"
+		echo "   - Linux/Unix client authentication: ✗ Not supported"
+		echo ""
+		echo "   If you need Unix/Linux integration:"
+		echo "   - Samba must be re-provisioned with: samba-tool domain provision --use-rfc2307"
+		echo "   - Warning: This requires domain re-provisioning (destructive - data loss)"
+		echo ""
+		echo "   You can safely ignore this message if only using Windows clients."
 		return 1
 	fi
 }
