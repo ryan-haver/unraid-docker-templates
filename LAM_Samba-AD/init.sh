@@ -567,9 +567,10 @@ configureLAMApplication () {
 	cp /etc/ldap/ldap.conf /etc/openldap/ldap.conf
 	
 	# Set LDAP environment variables in PHP-FPM pool
-	# Find PHP-FPM pool configuration
-	PHP_FPM_POOL="/etc/php/7.4/fpm/pool.d/www.conf"
+	# Dynamically find PHP-FPM pool configuration (works with any PHP version)
+	PHP_FPM_POOL=$(find /etc/php -name "www.conf" -path "*/fpm/pool.d/*" 2>/dev/null | head -n1)
 	if [ -f "$PHP_FPM_POOL" ]; then
+		echo "  - Found PHP-FPM pool: $PHP_FPM_POOL"
 		# Add LDAP environment variables if not already present
 		if ! grep -q "env\[LDAPTLS_REQCERT\]" "$PHP_FPM_POOL"; then
 			cat >> "$PHP_FPM_POOL" <<-'EOF'
@@ -578,7 +579,12 @@ configureLAMApplication () {
 			env[LDAPTLS_REQCERT] = allow
 			env[LDAPTLS_CACERT] = /var/lib/samba/private/tls/cert.pem
 			EOF
+			echo "  - Added LDAP environment to PHP-FPM pool"
+		else
+			echo "  - LDAP environment already configured in PHP-FPM"
 		fi
+	else
+		echo "  - WARNING: PHP-FPM pool config not found, using ldap.conf only"
 	fi
 	
 	echo "✓ LDAP client configured to trust Samba certificates"
