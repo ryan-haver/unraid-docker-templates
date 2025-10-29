@@ -560,7 +560,31 @@ configureLAMApplication () {
 	TLS_REQCERT allow
 	TLS_CACERT /var/lib/samba/private/tls/cert.pem
 	EOF
+	
+	# Also configure for PHP's LDAP extension (used by LAM)
+	# PHP reads ldap.conf from multiple locations
+	mkdir -p /etc/openldap
+	cp /etc/ldap/ldap.conf /etc/openldap/ldap.conf
+	
+	# Set LDAP environment variables in PHP-FPM pool
+	# Find PHP-FPM pool configuration
+	PHP_FPM_POOL="/etc/php/7.4/fpm/pool.d/www.conf"
+	if [ -f "$PHP_FPM_POOL" ]; then
+		# Add LDAP environment variables if not already present
+		if ! grep -q "env\[LDAPTLS_REQCERT\]" "$PHP_FPM_POOL"; then
+			cat >> "$PHP_FPM_POOL" <<-'EOF'
+			
+			; LDAP TLS configuration for self-signed certificates
+			env[LDAPTLS_REQCERT] = allow
+			env[LDAPTLS_CACERT] = /var/lib/samba/private/tls/cert.pem
+			EOF
+		fi
+	fi
+	
 	echo "✓ LDAP client configured to trust Samba certificates"
+	echo "  - /etc/ldap/ldap.conf configured"
+	echo "  - /etc/openldap/ldap.conf configured"
+	echo "  - PHP-FPM environment configured"
 	
 	# Ensure LAM config directory exists
 	mkdir -p /var/www/html/lam/config
@@ -867,6 +891,13 @@ configureLAM () {
 	echo ""
 	echo "=== VALIDATING LAM CONFIGURATION ==="
 	if validateLAMConfiguration; then
+		# Restart PHP-FPM to pick up LDAP configuration changes
+		echo ""
+		echo "Restarting PHP-FPM to apply LDAP configuration..."
+		if command -v supervisorctl >/dev/null 2>&1; then
+			supervisorctl restart php-fpm 2>/dev/null || echo "Note: PHP-FPM restart skipped (not running yet)"
+		fi
+		
 		echo ""
 		echo "========================================"
 		echo "LAM CONFIGURATION COMPLETE ✓"
