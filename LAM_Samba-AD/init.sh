@@ -552,6 +552,16 @@ schemaIDGUID:: +8nFQ43rpkWTOgbCCcSkqA==" > /tmp/Sshpubkey.class.ldif
 configureLAMApplication () {
 	echo "=== CONFIGURING LAM APPLICATION (config.cfg) ==="
 	
+	# Configure LDAP client to trust self-signed certificates
+	echo "Configuring LDAP client certificate trust..."
+	mkdir -p /etc/ldap
+	cat > /etc/ldap/ldap.conf <<-EOF
+	# LDAP client configuration for LAM/Samba AD
+	TLS_REQCERT allow
+	TLS_CACERT /var/lib/samba/private/tls/cert.pem
+	EOF
+	echo "✓ LDAP client configured to trust Samba certificates"
+	
 	# Ensure LAM config directory exists
 	mkdir -p /var/www/html/lam/config
 	mkdir -p /var/lib/lam/sess
