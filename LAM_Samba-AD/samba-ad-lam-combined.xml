@@ -148,7 +148,6 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <!-- Controls LAM app itself, profile management, global settings -->
   <!-- ========================================= -->
   <Config Name="LAM Master Password" Target="LAM_MASTER_PASSWORD" Default="lam" Mode="" Description="[APPLICATION] Master password for LAM application. Used to create/edit server profiles through LAM interface. This is NOT the password to access profiles - that's LAM Profile Password below." Type="Variable" Display="advanced" Required="false" Mask="true">lam</Config>
-  <Config Name="LAM Default Profile" Target="LAM_DEFAULT_PROFILE" Default="samba-ad" Mode="" Description="[APPLICATION] Which server profile to automatically select at LAM login. Must match a profile name (default: samba-ad)." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
   <Config Name="LAM Session Timeout" Target="LAM_SESSION_TIMEOUT" Default="30" Mode="" Description="[APPLICATION] Global session timeout in minutes. Applies to all profiles. Users auto-logged out after this period of inactivity." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
   <Config Name="LAM Log Level" Target="LAM_LOG_LEVEL" Default="4" Mode="" Description="[APPLICATION] Global logging verbosity. 0=off, 1=errors only, 2=warnings, 3=info, 4=debug (recommended for troubleshooting)." Type="Variable" Display="advanced" Required="false" Mask="false">4</Config>
 
