@@ -780,7 +780,7 @@ configureLAMServerProfile () {
 	"Passwd": "{SHA256}${LAM_PROFILE_HASH}",
 	"searchLimit": 0,
 	"accessLevel": ${LAM_ACCESS_LEVEL},
-	"loginMethod": "search",
+	"loginMethod": "list",
 	"loginSearchSuffix": "${DOMAIN_DC}",
 	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
 	"activeTypes": "user,group",
