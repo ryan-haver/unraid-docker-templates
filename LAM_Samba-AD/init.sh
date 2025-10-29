@@ -543,15 +543,15 @@ configureLAMApplication () {
 	echo "=== CONFIGURING LAM APPLICATION (config.cfg) ==="
 	
 	# Ensure LAM config directory exists
-	mkdir -p /var/lib/lam/config
+	mkdir -p /var/www/html/lam/config
 	mkdir -p /var/lib/lam/sess
 	mkdir -p /var/lib/lam/tmp
 	chown -R www-data:www-data /var/lib/lam
 	
 	# Check if config.cfg already exists
-	if [[ -f /var/lib/lam/config/config.cfg ]]; then
+	if [[ -f /var/www/html/lam/config/config.cfg ]]; then
 		echo "LAM application config exists - backing up..."
-		cp /var/lib/lam/config/config.cfg /var/lib/lam/config/config.cfg.backup.$(date +%s)
+		cp /var/www/html/lam/config/config.cfg /var/www/html/lam/config/config.cfg.backup.$(date +%s)
 	fi
 	
 	echo "Creating LAM application configuration (config.cfg)..."
@@ -560,7 +560,7 @@ configureLAMApplication () {
 	LAM_MASTER_HASH=$(echo -n "${LAM_MASTER_PASSWORD}" | sha256sum | awk '{print $1}')
 	
 	# Create config.cfg with proper JSON format
-	cat > /var/lib/lam/config/config.cfg <<EOF
+	cat > /var/www/html/lam/config/config.cfg <<EOF
 {
 	"ServerProfiles": {
 		"${LAM_DEFAULT_PROFILE}": {
@@ -580,8 +580,8 @@ configureLAMApplication () {
 EOF
 	
 	# Set proper permissions
-	chown www-data:www-data /var/lib/lam/config/config.cfg
-	chmod 600 /var/lib/lam/config/config.cfg
+	chown www-data:www-data /var/www/html/lam/config/config.cfg
+	chmod 600 /var/www/html/lam/config/config.cfg
 	
 	echo "✓ LAM application configuration created successfully"
 	echo "  - Default profile: ${LAM_DEFAULT_PROFILE}"
@@ -686,7 +686,7 @@ configureLAMServerProfile () {
 	echo "DEBUG: Final admin_dns_json = '${admin_dns_json}'"
 	
 	# Create server profile with proper JSON format for modern LAM
-	local profile_file="/var/lib/lam/config/${clean_profile_name}.conf"
+	local profile_file="/var/www/html/lam/config/${clean_profile_name}.conf"
 	
 	echo "Creating server profile: ${clean_profile_name}.conf"
 	
@@ -854,14 +854,14 @@ validateLAMConfiguration () {
 	echo "Checking LAM configuration files..."
 	
 	# 1. Check LAM application config (config.cfg)
-	if [[ ! -f /var/lib/lam/config/config.cfg ]]; then
+	if [[ ! -f /var/www/html/lam/config/config.cfg ]]; then
 		echo "ERROR: LAM application config missing (config.cfg)"
 		((config_errors++))
 	else
 		echo "✓ Application config exists (config.cfg)"
 		
 		# Validate JSON syntax
-		if ! python3 -m json.tool /var/lib/lam/config/config.cfg > /dev/null 2>&1; then
+		if ! python3 -m json.tool /var/www/html/lam/config/config.cfg > /dev/null 2>&1; then
 			echo "ERROR: Application config has invalid JSON syntax"
 			((config_errors++))
 		else
@@ -869,30 +869,30 @@ validateLAMConfiguration () {
 		fi
 		
 		# Check required fields in config.cfg
-		if ! grep -q "passwordHash" /var/lib/lam/config/config.cfg; then
+		if ! grep -q "passwordHash" /var/www/html/lam/config/config.cfg; then
 			echo "ERROR: Application config missing passwordHash"
 			((config_errors++))
 		fi
 		
-		if ! grep -q "ServerProfiles" /var/lib/lam/config/config.cfg; then
+		if ! grep -q "ServerProfiles" /var/www/html/lam/config/config.cfg; then
 			echo "ERROR: Application config missing ServerProfiles"
 			((config_errors++))
 		fi
 		
 		# Check ownership and permissions
-		if [[ $(stat -c %U /var/lib/lam/config/config.cfg) != "www-data" ]]; then
+		if [[ $(stat -c %U /var/www/html/lam/config/config.cfg) != "www-data" ]]; then
 			echo "WARNING: Application config ownership incorrect - should be www-data"
 			((warnings++))
 		fi
 		
-		if [[ $(stat -c %a /var/lib/lam/config/config.cfg) != "600" ]]; then
+		if [[ $(stat -c %a /var/www/html/lam/config/config.cfg) != "600" ]]; then
 			echo "WARNING: Application config permissions incorrect - should be 600"
 			((warnings++))
 		fi
 	fi
 	
 	# 2. Check LAM server profile
-	local profile_file="/var/lib/lam/config/${clean_profile_name}.conf"
+	local profile_file="/var/www/html/lam/config/${clean_profile_name}.conf"
 	if [[ ! -f "$profile_file" ]]; then
 		echo "ERROR: LAM server profile missing (${clean_profile_name}.conf)"
 		((config_errors++))
@@ -940,7 +940,7 @@ validateLAMConfiguration () {
 	fi
 	
 	# 3. Check LAM directory structure
-	local required_dirs=("/var/lib/lam/config" "/var/lib/lam/sess" "/var/lib/lam/tmp")
+	local required_dirs=("/var/www/html/lam/config" "/var/lib/lam/sess" "/var/lib/lam/tmp")
 	for dir in "${required_dirs[@]}"; do
 		if [[ ! -d "$dir" ]]; then
 			echo "ERROR: LAM directory missing: $dir"
@@ -952,8 +952,8 @@ validateLAMConfiguration () {
 	done
 	
 	# 4. Validate password hashes are properly set
-	if [[ -f /var/lib/lam/config/config.cfg ]] && [[ -f "$profile_file" ]]; then
-		if grep -q "passwordHash.*{SHA256}" /var/lib/lam/config/config.cfg && 
+	if [[ -f /var/www/html/lam/config/config.cfg ]] && [[ -f "$profile_file" ]]; then
+		if grep -q "passwordHash.*{SHA256}" /var/www/html/lam/config/config.cfg && 
 		   grep -q "Passwd.*{SHA256}" "$profile_file"; then
 			echo "✓ Password hashes properly configured"
 		else
@@ -963,9 +963,9 @@ validateLAMConfiguration () {
 	fi
 	
 	# 5. Check for conflicts with old configuration format
-	if [[ -f /var/lib/lam/config/lam.conf ]]; then
+	if [[ -f /var/www/html/lam/config/lam.conf ]]; then
 		echo "WARNING: Old format LAM config detected (lam.conf) - may cause conflicts"
-		echo "  Consider removing: /var/lib/lam/config/lam.conf"
+		echo "  Consider removing: /var/www/html/lam/config/lam.conf"
 		((warnings++))
 	fi
 	
@@ -1129,7 +1129,7 @@ appStart () {
 	fi
 	
 	# Configure LAM if config doesn't exist (runs on first start OR if config was deleted)
-	if [[ ! -f /var/lib/lam/config/config.cfg ]] || [[ ! -f "/var/lib/lam/config/${LAM_PROFILE_NAME}.conf" ]]; then
+	if [[ ! -f /var/www/html/lam/config/config.cfg ]] || [[ ! -f "/var/www/html/lam/config/${LAM_PROFILE_NAME}.conf" ]]; then
 		echo "LAM configuration not found, configuring now..."
 		echo "Sleeping 5 seconds to ensure Samba LDAP is ready..."
 		sleep 5
