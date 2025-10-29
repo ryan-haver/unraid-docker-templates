@@ -68,6 +68,14 @@ appSetup () {
 	HOSTIP=${HOSTIP:-NONE}
 	RPCPORTS=${RPCPORTS:-"49152-49172"}
 	
+	# Validate DOMAIN format before using it
+	if [[ ! "${DOMAIN}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$ ]]; then
+		echo "ERROR: Invalid DOMAIN format: ${DOMAIN}"
+		echo "DOMAIN must be a valid FQDN (e.g., example.com, domain.local)"
+		echo "Must contain at least one dot and only valid DNS characters"
+		exit 1
+	fi
+	
 	# Auto-generate DOMAIN_DC from DOMAIN if not explicitly set
 	# Convert domain.example.com to dc=domain,dc=example,dc=com
 	if [[ -z "${DOMAIN_DC}" ]]; then
@@ -234,7 +242,7 @@ appSetup () {
 	echo "driftfile       /var/lib/ntp/ntp.drift" >> /etc/ntpd.conf
 	echo "logfile         /var/log/ntp" >> /etc/ntpd.conf
 	echo "ntpsigndsocket  /usr/local/samba/var/lib/ntp_signd/" >> /etc/ntpd.conf
-	echo "restrict default kod nomodify notrap nopeer mssntp" >> /etc/ntpd.conf
+	echo "restrict default kod limited nomodify notrap nopeer mssntp" >> /etc/ntpd.conf
 	echo "restrict 127.0.0.1" >> /etc/ntpd.conf
 	echo "restrict 0.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
 	echo "restrict 1.${NTPSERVER}   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
@@ -371,17 +379,27 @@ configureLDAPS () {
 }
 
 fixDomainUsersGroup () {
+	echo "Checking Domain Users group gidNumber..."
 	GIDNUMBER=$(ldbedit -H /var/lib/samba/private/sam.ldb -e cat "samaccountname=domain users" | { grep ^gidNumber: || true; })
 	if [ -z "${GIDNUMBER}" ]; then
-		echo "dn: CN=Domain Users,CN=Users,${DOMAIN_DC}
+		echo "Adding gidNumber to Domain Users group..."
+		if echo "dn: CN=Domain Users,CN=Users,${DOMAIN_DC}
 changetype: modify
 add: gidNumber
-gidNumber: 3000000" | ldbmodify -H /var/lib/samba/private/sam.ldb
-		net cache flush
+gidNumber: 3000000" | ldbmodify -H /var/lib/samba/private/sam.ldb 2>&1; then
+			echo "✓ Successfully added gidNumber to Domain Users"
+			net cache flush
+		else
+			echo "✗ Failed to add gidNumber to Domain Users (may already exist or permission issue)"
+			return 1
+		fi
+	else
+		echo "✓ Domain Users already has gidNumber: ${GIDNUMBER}"
 	fi
 }
 
 setupSSH () {
+	echo "Setting up SSH public key schema extensions..."
 	echo "dn: CN=sshPublicKey,CN=Schema,CN=Configuration,${DOMAIN_DC}
 changetype: add
 objectClass: top
@@ -412,8 +430,23 @@ objectCategory: CN=Class-Schema,CN=Schema,CN=Configuration,${DOMAIN_DC}
 defaultObjectCategory: CN=ldapPublicKey,CN=Schema,CN=Configuration,${DOMAIN_DC}
 mayContain: sshPublicKey
 schemaIDGUID:: +8nFQ43rpkWTOgbCCcSkqA==" > /tmp/Sshpubkey.class.ldif
-	ldbadd -H /var/lib/samba/private/sam.ldb /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.attr.ldif --option="dsdb:schema update allowed"=true
-	ldbadd -H /var/lib/samba/private/sam.ldb /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.class.ldif --option="dsdb:schema update allowed"=true
+	
+	echo "Adding sshPublicKey attribute to schema..."
+	if ldbadd -H /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.attr.ldif --option="dsdb:schema update allowed"=true 2>&1; then
+		echo "✓ Successfully added sshPublicKey attribute"
+	else
+		echo "⚠ sshPublicKey attribute add failed (may already exist)"
+	fi
+	
+	echo "Adding ldapPublicKey class to schema..."
+	if ldbadd -H /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.class.ldif --option="dsdb:schema update allowed"=true 2>&1; then
+		echo "✓ Successfully added ldapPublicKey class"
+	else
+		echo "⚠ ldapPublicKey class add failed (may already exist)"
+	fi
+	
+	# Clean up temp files
+	rm -f /tmp/Sshpubkey.attr.ldif /tmp/Sshpubkey.class.ldif
 }
 
 configureLAMApplication () {
