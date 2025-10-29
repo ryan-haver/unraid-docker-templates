@@ -554,6 +554,16 @@ configureLAMApplication () {
 	
 	# Configure LDAP client to trust self-signed certificates
 	echo "Configuring LDAP client certificate trust..."
+	
+	# Copy Samba's CA certificate to LAM's expected location
+	# LAM automatically calls setSSLCaCert() which does putenv('LDAPTLS_CACERT=...')
+	cp /var/lib/samba/private/tls/ca.pem /var/www/html/lam/config/serverCerts.pem
+	chown www-data:www-data /var/www/html/lam/config/serverCerts.pem
+	chmod 644 /var/www/html/lam/config/serverCerts.pem
+	echo "✓ Samba CA certificate installed to LAM config"
+	echo "  - /var/www/html/lam/config/serverCerts.pem"
+	
+	# Also configure system-wide LDAP client (for command-line tools)
 	mkdir -p /etc/ldap
 	cat > /etc/ldap/ldap.conf <<-EOF
 	# LDAP client configuration for LAM/Samba AD
@@ -566,31 +576,9 @@ configureLAMApplication () {
 	mkdir -p /etc/openldap
 	cp /etc/ldap/ldap.conf /etc/openldap/ldap.conf
 	
-	# Set LDAP environment variables in PHP-FPM pool
-	# Dynamically find PHP-FPM pool configuration (works with any PHP version)
-	PHP_FPM_POOL=$(find /etc/php -name "www.conf" -path "*/fpm/pool.d/*" 2>/dev/null | head -n1)
-	if [ -f "$PHP_FPM_POOL" ]; then
-		echo "  - Found PHP-FPM pool: $PHP_FPM_POOL"
-		# Add LDAP environment variables if not already present
-		if ! grep -q "env\[LDAPTLS_REQCERT\]" "$PHP_FPM_POOL"; then
-			cat >> "$PHP_FPM_POOL" <<-'EOF'
-			
-			; LDAP TLS configuration for self-signed certificates
-			env[LDAPTLS_REQCERT] = allow
-			env[LDAPTLS_CACERT] = /var/lib/samba/private/tls/cert.pem
-			EOF
-			echo "  - Added LDAP environment to PHP-FPM pool"
-		else
-			echo "  - LDAP environment already configured in PHP-FPM"
-		fi
-	else
-		echo "  - WARNING: PHP-FPM pool config not found, using ldap.conf only"
-	fi
-	
 	echo "✓ LDAP client configured to trust Samba certificates"
 	echo "  - /etc/ldap/ldap.conf configured"
 	echo "  - /etc/openldap/ldap.conf configured"
-	echo "  - PHP-FPM environment configured"
 	
 	# Ensure LAM config directory exists
 	mkdir -p /var/www/html/lam/config
