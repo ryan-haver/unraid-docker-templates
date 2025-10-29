@@ -101,6 +101,8 @@ appSetup () {
 	LAM_PROFILE_TIMEZONE=${LAM_PROFILE_TIMEZONE:-UTC}
 	LAM_UID_RANGE=${LAM_UID_RANGE:-10000-30000}
 	LAM_GID_RANGE=${LAM_GID_RANGE:-10000-30000}
+	LAM_ADMIN_DNS=${LAM_ADMIN_DNS:-cn=Administrator,cn=Users}
+	LAM_ACCESS_LEVEL=${LAM_ACCESS_LEVEL:-100}
 	LOGLEVEL=${LOGLEVEL:-1}
 	NTPSERVER=${NTPSERVER:-pool.ntp.org}
 	MULTICASTDNS=${MULTICASTDNS:-yes}
@@ -653,11 +655,28 @@ configureLAMServerProfile () {
 	IFS=',' read -ra GROUP_MODULES_ARRAY <<< "${LAM_GROUP_MODULES}"
 	
 	# Build JSON arrays for modules
+	# NOTE: Module order is important in LAM!
+	# - First module in the array is the "base module" (provides structural objectClass)
+	# - Additional modules are auxiliary modules (add extra attributes)
+	# For Active Directory:
+	#   - windowsUser: Base module for AD user accounts (structural objectClass)
+	#   - inetOrgPerson: Auxiliary module for extended person attributes
+	#   - windowsGroup: Base module for AD group accounts (structural objectClass)
+	# Do NOT reorder modules without understanding LAM's base vs auxiliary module concept
 	local user_modules_json=$(printf ',"%s"' "${USER_MODULES_ARRAY[@]}")
 	user_modules_json="[${user_modules_json:1}]"  # Remove leading comma and wrap in brackets
 	
 	local group_modules_json=$(printf ',"%s"' "${GROUP_MODULES_ARRAY[@]}")
 	group_modules_json="[${group_modules_json:1}]"
+	
+	# Parse comma-separated admin DNs and build JSON array
+	IFS=',' read -ra ADMIN_DN_ARRAY <<< "${LAM_ADMIN_DNS}"
+	local admin_dns_json=""
+	for admin_dn in "${ADMIN_DN_ARRAY[@]}"; do
+		admin_dn=$(echo "$admin_dn" | xargs)  # Trim whitespace
+		admin_dns_json="${admin_dns_json},\"${admin_dn},${DOMAIN_DC}\""
+	done
+	admin_dns_json="[${admin_dns_json:1}]"  # Remove leading comma and wrap in brackets
 	
 	# Create server profile with proper JSON format for modern LAM
 	local profile_file="/var/lib/lam/config/${clean_profile_name}.conf"
@@ -669,15 +688,21 @@ configureLAMServerProfile () {
 	"ServerURL": "${server_url}",
 	"useTLS": "${use_tls}",
 	"ignoreTLSErrors": ${ignore_tls_errors},
+	"followReferrals": "false",
+	"pagedResults": "false",
+	"hidePasswordPromptForExpiredPasswords": "false",
+	"referentialIntegrityOverlay": "false",
+	"defaultLanguage": "${LAM_PROFILE_LANGUAGE}",
+	"timeZone": "${LAM_PROFILE_TIMEZONE}",
 	"treesuffix": "${DOMAIN_DC}",
-	"Admins": ["cn=Administrator,cn=Users,${DOMAIN_DC}"],
+	"Admins": ${admin_dns_json},
 	"Passwd": "{SHA256}${LAM_PROFILE_HASH}",
 	"searchLimit": 0,
-	"accessLevel": 100,
+	"accessLevel": ${LAM_ACCESS_LEVEL},
 	"loginMethod": "search",
 	"loginSearchSuffix": "${DOMAIN_DC}",
 	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
-	"activeTypes": "user,group",
+	"activeTypes": ["user", "group"],
 	"modules": {
 		"user": ${user_modules_json},
 		"group": ${group_modules_json}
@@ -685,7 +710,7 @@ configureLAMServerProfile () {
 	"types": {
 		"user": {
 			"suffix": "${user_suffix_dn}",
-			"attr": ["#sAMAccountName", "#givenName", "#sn", "#mail"],
+			"attr": ["#sAMAccountName", "#givenName", "#sn", "#mail", "#employeeNumber", "#department", "#title", "memberOf"],
 			"modules": "${LAM_USER_MODULES}"
 		},
 		"group": {
@@ -704,6 +729,22 @@ configureLAMServerProfile () {
 		"posixGroup_group": {
 			"minGID": "${group_gid_min}",
 			"maxGID": "${group_gid_max}"
+		},
+		"windowsUser_user": {
+			"sambaDomainName": "${URDOMAIN}",
+			"windowsUser_hidemsSFU30Name": "false",
+			"windowsUser_hidemsSFU30NisDomain": "false",
+			"windowsUser_hideunixHomeDirectory": "false",
+			"windowsUser_hideunixLoginShell": "false"
+		},
+		"windowsGroup_group": {
+			"sambaDomainName": "${URDOMAIN}",
+			"windowsGroup_hidemsSFU30Name": "false"
+		},
+		"inetOrgPerson_user": {
+			"inetOrgPerson_hideDescription": "false",
+			"inetOrgPerson_hideTelephoneNumber": "false",
+			"inetOrgPerson_hideMobile": "false"
 		}
 	}
 }
@@ -734,10 +775,30 @@ configureLAM () {
 	echo "Domain: ${DOMAIN} (${DOMAIN_DC})"
 	
 	# Step 1: Configure LAM application
-	configureLAMApplication
+	if ! configureLAMApplication; then
+		echo ""
+		echo "========================================"
+		echo "LAM CONFIGURATION FAILED ✗"
+		echo "========================================"
+		echo "FATAL: LAM application configuration failed"
+		echo "Container cannot start without valid LAM config"
+		echo "Check config.cfg generation above for errors"
+		echo "========================================"
+		return 1
+	fi
 	
 	# Step 2: Configure LAM server profile  
-	configureLAMServerProfile
+	if ! configureLAMServerProfile; then
+		echo ""
+		echo "========================================"
+		echo "LAM CONFIGURATION FAILED ✗"
+		echo "========================================"
+		echo "FATAL: LAM server profile configuration failed"
+		echo "Container cannot start without valid LAM profile"
+		echo "Check ${LAM_PROFILE_NAME}.conf generation above for errors"
+		echo "========================================"
+		return 1
+	fi
 	
 	# Step 3: Validate configuration
 	echo ""
@@ -961,6 +1022,49 @@ validateSSHSchemas () {
 	fi
 }
 
+validateRFC2307Schema () {
+	echo "Validating RFC2307 (NIS extensions) schema..."
+	
+	# Check for key RFC2307 attributes that should exist if provisioned with --use-rfc2307
+	if ldbsearch -H /var/lib/samba/private/sam.ldb -b "CN=Schema,CN=Configuration,${DOMAIN_DC}" "(cn=uidNumber)" cn 2>/dev/null | grep -q "dn: CN=uidNumber"; then
+		echo "✓ RFC2307 schema extensions found (uidNumber/gidNumber support enabled)"
+		echo "  Unix attributes (uidNumber, gidNumber, loginShell, homeDirectory) are available"
+		return 0
+	else
+		echo "⚠️  WARNING: RFC2307 schema extensions NOT found"
+		echo "   Samba may not have been provisioned with --use-rfc2307 parameter"
+		echo "   Unix/POSIX attributes (uidNumber, gidNumber) may not work properly"
+		echo "   LAM posixAccount/posixGroup modules may fail or behave incorrectly"
+		echo ""
+		echo "   To fix: Re-provision Samba with: samba-tool domain provision --use-rfc2307"
+		echo "   Note: This requires domain re-provisioning (destructive operation)"
+		return 1
+	fi
+}
+
+checkLAMWebInterface () {
+	echo "Checking LAM web interface availability..."
+	local max_attempts=10
+	local attempt=1
+	
+	while [ $attempt -le $max_attempts ]; do
+		if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080 2>/dev/null | grep -q "200\|302"; then
+			echo "✓ LAM web interface is accessible at http://<container-ip>:8080"
+			return 0
+		fi
+		
+		if [ $attempt -lt $max_attempts ]; then
+			sleep 2
+		fi
+		attempt=$((attempt + 1))
+	done
+	
+	echo "⚠️  LAM web interface not responding after ${max_attempts} attempts"
+	echo "   Check nginx and php-fpm services with: supervisorctl status"
+	echo "   Container will continue running - LAM may become available shortly"
+	return 1
+}
+
 waitForSambaReady () {
 	echo "Waiting for Samba AD to be ready..."
 	local max_wait=${SCHEMA_SETUP_DELAY}
@@ -988,6 +1092,7 @@ appStart () {
 	if [ "${1}" = "true" ]; then
 		echo "Checking Samba AD readiness before schema operations..."
 		waitForSambaReady
+		validateRFC2307Schema
 		fixDomainUsersGroup
 		setupSSH
 		validateSSHSchemas
@@ -1014,6 +1119,7 @@ appStart () {
 		configureLAM
 		echo "Validating LAM configuration..."
 		validateLAMConfiguration
+		checkLAMWebInterface
 	else
 		echo "LAM configuration already exists, skipping configuration"
 	fi
