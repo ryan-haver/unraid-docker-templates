@@ -598,8 +598,9 @@ configureLAMApplication () {
 	
 	# Generate password hash using PHP's crypt with SHA512 (same as LAM uses)
 	# LAM uses CRYPT-SHA512 format, not plain SHA256
-	LAM_MASTER_HASH=$(php -r "echo crypt('${LAM_MASTER_PASSWORD}', '\$6\$' . bin2hex(random_bytes(8)) . '\$');")
-	LAM_SALT=$(php -r "echo base64_encode(random_bytes(16));")
+	# Redirect stderr to avoid breaking output
+	LAM_MASTER_HASH=$(php -r "echo crypt('${LAM_MASTER_PASSWORD}', '\$6\$' . bin2hex(random_bytes(8)) . '\$');" 2>/dev/null)
+	LAM_SALT=$(php -r "echo base64_encode(random_bytes(16));" 2>/dev/null)
 	
 	# Create config.cfg with proper JSON format matching LAM's structure
 	cat > /var/www/html/lam/config/config.cfg <<EOF
