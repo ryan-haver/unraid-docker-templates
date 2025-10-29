@@ -84,7 +84,7 @@ appSetup () {
 	fi
 	
 	# LAM Application Settings (config.cfg)
-	LAM_MASTER_PASSWORD=${LAM_MASTER_PASSWORD:-lam}
+	LAM_MASTER_PASSWORD=${LAM_MASTER_PASSWORD:-ChangeMasterPassword123!}
 	LAM_SESSION_TIMEOUT=${LAM_SESSION_TIMEOUT:-30}
 	LAM_LOG_LEVEL=${LAM_LOG_LEVEL:-4}
 	
@@ -578,27 +578,60 @@ configureLAMApplication () {
 	
 	echo "Creating LAM application configuration (config.cfg)..."
 	
-	# Generate password hash (SHA256 with prefix)
-	LAM_MASTER_HASH=$(echo -n "${LAM_MASTER_PASSWORD}" | sha256sum | awk '{print $1}')
+	# Generate password hash using PHP's crypt with SHA512 (same as LAM uses)
+	# LAM uses CRYPT-SHA512 format, not plain SHA256
+	LAM_MASTER_HASH=$(php -r "echo crypt('${LAM_MASTER_PASSWORD}', '\$6\$' . bin2hex(random_bytes(8)) . '\$');")
+	LAM_SALT=$(php -r "echo base64_encode(random_bytes(16));")
 	
-	# Create config.cfg with proper JSON format
+	# Create config.cfg with proper JSON format matching LAM's structure
 	cat > /var/www/html/lam/config/config.cfg <<EOF
 {
-	"ServerProfiles": {
-		"${LAM_PROFILE_NAME}": {
-			"name": "${LAM_PROFILE_NAME}",
-			"default": true
-		}
-	},
-	"passwordHash": "{SHA256}${LAM_MASTER_HASH}",
+	"password": "{CRYPT-SHA512}${LAM_MASTER_HASH} ${LAM_SALT}",
 	"default": "${LAM_PROFILE_NAME}",
-	"sessionTimeout": ${LAM_SESSION_TIMEOUT},
-	"allowedHosts": "",
+	"sessionTimeout": "${LAM_SESSION_TIMEOUT}",
+	"hideLoginErrorDetails": "false",
 	"logLevel": "${LAM_LOG_LEVEL}",
 	"logDestination": "SYSLOG",
-	"encryptSession": "true",
-	"language": "${LAM_PROFILE_LANGUAGE}",
-	"timeZone": "${LAM_PROFILE_TIMEZONE}"
+	"allowedHosts": "",
+	"passwordMinLength": "0",
+	"passwordMinUpper": "0",
+	"passwordMinLower": "0",
+	"passwordMinNumeric": "0",
+	"passwordMinClasses": "0",
+	"passwordMinSymbol": "0",
+	"checkedRulesCount": "-1",
+	"passwordMustNotContainUser": "false",
+	"passwordMustNotContain3Chars": "false",
+	"externalPwdCheckUrl": "",
+	"errorReporting": "default",
+	"allowedHostsSelfService": "",
+	"license": "",
+	"licenseEmailFrom": "",
+	"licenseEmailTo": "",
+	"licenseWarningType": "",
+	"licenseEmailDateSent": "",
+	"mailServer": "",
+	"mailUser": "",
+	"mailPassword": "",
+	"mailEncryption": "",
+	"mailAttribute": "mail",
+	"mailBackupAttribute": "passwordselfresetbackupmail",
+	"configDatabaseType": "files",
+	"configDatabaseServer": "",
+	"configDatabasePort": "",
+	"configDatabaseName": "",
+	"configDatabaseUser": "",
+	"configDatabasePassword": "",
+	"configDatabaseSSLCA": "",
+	"moduleSettings": "W10=",
+	"smsProvider": "",
+	"smsApiKey": "",
+	"smsToken": "",
+	"smsAccountId": "",
+	"smsRegion": "",
+	"smsFrom": "",
+	"smsAttributes": "mobileTelephoneNumber;mobile",
+	"smsDefaultCountryPrefix": ""
 }
 EOF
 	
@@ -892,13 +925,13 @@ validateLAMConfiguration () {
 		fi
 		
 		# Check required fields in config.cfg
-		if ! grep -q "passwordHash" /var/www/html/lam/config/config.cfg; then
-			echo "ERROR: Application config missing passwordHash"
+		if ! grep -q "\"password\"" /var/www/html/lam/config/config.cfg; then
+			echo "ERROR: Application config missing password field"
 			((config_errors++))
 		fi
 		
-		if ! grep -q "ServerProfiles" /var/www/html/lam/config/config.cfg; then
-			echo "ERROR: Application config missing ServerProfiles"
+		if ! grep -q "\"default\"" /var/www/html/lam/config/config.cfg; then
+			echo "ERROR: Application config missing default profile"
 			((config_errors++))
 		fi
 		
@@ -976,7 +1009,7 @@ validateLAMConfiguration () {
 	
 	# 4. Validate password hashes are properly set
 	if [[ -f /var/www/html/lam/config/config.cfg ]] && [[ -f "$profile_file" ]]; then
-		if grep -q "passwordHash.*{SHA256}" /var/www/html/lam/config/config.cfg && 
+		if grep -q "\"password\".*{CRYPT-SHA512}" /var/www/html/lam/config/config.cfg && 
 		   grep -q "Passwd.*{SHA256}" "$profile_file"; then
 			echo "✓ Password hashes properly configured"
 		else
