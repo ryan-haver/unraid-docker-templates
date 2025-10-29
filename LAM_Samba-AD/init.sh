@@ -711,7 +711,7 @@ configureLAMServerProfile () {
 	"loginMethod": "search",
 	"loginSearchSuffix": "${DOMAIN_DC}",
 	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
-	"activeTypes": ["user", "group"],
+	"activeTypes": "user,group",
 	"modules": {
 		"user": ${user_modules_json},
 		"group": ${group_modules_json}
@@ -924,7 +924,7 @@ validateLAMConfiguration () {
 			((config_errors++))
 		fi
 		
-		if ! grep -q "\"activeTypes\": \[\"user\", \"group\"\]" "$profile_file"; then
+		if ! grep -q "\"activeTypes\": \"user,group\"" "$profile_file"; then
 			echo "ERROR: Server profile missing essential activeTypes configuration"
 			((config_errors++))
 		fi
