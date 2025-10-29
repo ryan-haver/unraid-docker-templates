@@ -547,6 +547,8 @@ configureLAMApplication () {
 	mkdir -p /var/lib/lam/sess
 	mkdir -p /var/lib/lam/tmp
 	chown -R www-data:www-data /var/lib/lam
+	chown -R www-data:www-data /var/www/html/lam/config
+	chmod 755 /var/www/html/lam/config
 	
 	# Check if config.cfg already exists
 	if [[ -f /var/www/html/lam/config/config.cfg ]]; then
