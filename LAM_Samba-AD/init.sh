@@ -67,7 +67,14 @@ appSetup () {
 	DNSFORWARDER=${DNSFORWARDER:-NONE}
 	HOSTIP=${HOSTIP:-NONE}
 	RPCPORTS=${RPCPORTS:-"49152-49172"}
-	DOMAIN_DC=${DOMAIN_DC:-${DOMAIN_DC}}
+	
+	# Auto-generate DOMAIN_DC from DOMAIN if not explicitly set
+	# Convert domain.example.com to dc=domain,dc=example,dc=com
+	if [[ -z "${DOMAIN_DC}" ]]; then
+		DOMAIN_DC=$(echo "${DOMAIN}" | sed 's/\./,dc=/g' | sed 's/^/dc=/')
+		echo "Auto-generated DOMAIN_DC: ${DOMAIN_DC}"
+	fi
+	
 	# LAM Application Settings (config.cfg)
 	LAM_MASTER_PASSWORD=${LAM_MASTER_PASSWORD:-lam}
 	LAM_DEFAULT_PROFILE=${LAM_DEFAULT_PROFILE:-samba-ad}
