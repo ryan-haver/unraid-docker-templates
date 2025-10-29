@@ -105,6 +105,7 @@ appSetup () {
 	NTPSERVER=${NTPSERVER:-pool.ntp.org}
 	MULTICASTDNS=${MULTICASTDNS:-yes}
 	REGENERATE_CERT=${REGENERATE_CERT:-true}
+	SCHEMA_SETUP_DELAY=${SCHEMA_SETUP_DELAY:-10}
 	
 	LDOMAIN=${DOMAIN,,}
 	UDOMAIN=${DOMAIN^^}
@@ -392,8 +393,37 @@ configureLDAPS () {
 
 fixDomainUsersGroup () {
 	echo "Checking Domain Users group gidNumber..."
-	GIDNUMBER=$(ldbedit -H /var/lib/samba/private/sam.ldb -e cat "samaccountname=domain users" | { grep ^gidNumber: || true; })
-	if [ -z "${GIDNUMBER}" ]; then
+	
+	local max_retries=3
+	local retry_delay=5
+	local attempt=1
+	
+	while [ $attempt -le $max_retries ]; do
+		echo "Attempting to fix Domain Users group (attempt $attempt/$max_retries)..."
+		
+		# Check if Domain Users group exists
+		if ! ldbsearch -H /var/lib/samba/private/sam.ldb -b "${DOMAIN_DC}" "(samaccountname=domain users)" dn 2>/dev/null | grep -q "dn: CN=Domain Users"; then
+			echo "⚠ Domain Users group not found yet, Samba may still be initializing..."
+			if [ $attempt -lt $max_retries ]; then
+				echo "Waiting ${retry_delay}s before retry..."
+				sleep $retry_delay
+				attempt=$((attempt + 1))
+				continue
+			else
+				echo "✗ Domain Users group not found after $max_retries attempts"
+				return 1
+			fi
+		fi
+		
+		# Check if gidNumber already exists
+		GIDNUMBER=$(ldbedit -H /var/lib/samba/private/sam.ldb -e cat "samaccountname=domain users" 2>/dev/null | { grep ^gidNumber: || true; })
+		
+		if [ -n "${GIDNUMBER}" ]; then
+			echo "✓ Domain Users already has gidNumber: ${GIDNUMBER}"
+			return 0
+		fi
+		
+		# Try to add gidNumber
 		echo "Adding gidNumber to Domain Users group..."
 		if echo "dn: CN=Domain Users,CN=Users,${DOMAIN_DC}
 changetype: modify
@@ -401,17 +431,37 @@ add: gidNumber
 gidNumber: 3000000" | ldbmodify -H /var/lib/samba/private/sam.ldb 2>&1; then
 			echo "✓ Successfully added gidNumber to Domain Users"
 			net cache flush
+			return 0
 		else
-			echo "✗ Failed to add gidNumber to Domain Users (may already exist or permission issue)"
-			return 1
+			echo "✗ Failed to add gidNumber to Domain Users"
+			if [ $attempt -lt $max_retries ]; then
+				echo "Waiting ${retry_delay}s before retry..."
+				sleep $retry_delay
+			fi
 		fi
-	else
-		echo "✓ Domain Users already has gidNumber: ${GIDNUMBER}"
-	fi
+		
+		attempt=$((attempt + 1))
+	done
+	
+	echo "⚠ Failed to add gidNumber after $max_retries attempts (may already exist or permission issue)"
+	return 1
 }
 
 setupSSH () {
 	echo "Setting up SSH public key schema extensions..."
+	
+	local max_retries=3
+	local retry_delay=5
+	local attempt=1
+	
+	# Check if schemas already exist before attempting to add
+	echo "Checking if SSH schemas already exist..."
+	if ldbsearch -H /var/lib/samba/private/sam.ldb -b "CN=Schema,CN=Configuration,${DOMAIN_DC}" "(cn=sshPublicKey)" 2>/dev/null | grep -q "dn: CN=sshPublicKey"; then
+		echo "✓ sshPublicKey schema already exists, skipping setup"
+		return 0
+	fi
+	
+	# Generate LDIF files
 	echo "dn: CN=sshPublicKey,CN=Schema,CN=Configuration,${DOMAIN_DC}
 changetype: add
 objectClass: top
@@ -443,22 +493,48 @@ defaultObjectCategory: CN=ldapPublicKey,CN=Schema,CN=Configuration,${DOMAIN_DC}
 mayContain: sshPublicKey
 schemaIDGUID:: +8nFQ43rpkWTOgbCCcSkqA==" > /tmp/Sshpubkey.class.ldif
 	
-	echo "Adding sshPublicKey attribute to schema..."
-	if ldbadd -H /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.attr.ldif --option="dsdb:schema update allowed"=true 2>&1; then
-		echo "✓ Successfully added sshPublicKey attribute"
-	else
-		echo "⚠ sshPublicKey attribute add failed (may already exist)"
-	fi
+	# Retry loop for schema additions
+	while [ $attempt -le $max_retries ]; do
+		echo "Adding SSH schemas (attempt $attempt/$max_retries)..."
+		
+		local attr_success=false
+		local class_success=false
+		
+		# Try to add sshPublicKey attribute
+		if ldbadd -H /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.attr.ldif --option="dsdb:schema update allowed"=true 2>&1 | grep -qi "success\|already exists"; then
+			echo "✓ sshPublicKey attribute added/exists"
+			attr_success=true
+		else
+			echo "✗ sshPublicKey attribute add failed"
+		fi
+		
+		# Try to add ldapPublicKey class
+		if ldbadd -H /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.class.ldif --option="dsdb:schema update allowed"=true 2>&1 | grep -qi "success\|already exists"; then
+			echo "✓ ldapPublicKey class added/exists"
+			class_success=true
+		else
+			echo "✗ ldapPublicKey class add failed"
+		fi
+		
+		# Check if both succeeded
+		if [ "$attr_success" = true ] && [ "$class_success" = true ]; then
+			echo "✓ SSH schema setup completed successfully"
+			rm -f /tmp/Sshpubkey.attr.ldif /tmp/Sshpubkey.class.ldif
+			return 0
+		fi
+		
+		# If not last attempt, wait and retry
+		if [ $attempt -lt $max_retries ]; then
+			echo "⚠ Schema setup incomplete, waiting ${retry_delay}s before retry..."
+			sleep $retry_delay
+		fi
+		
+		attempt=$((attempt + 1))
+	done
 	
-	echo "Adding ldapPublicKey class to schema..."
-	if ldbadd -H /var/lib/samba/private/sam.ldb /tmp/Sshpubkey.class.ldif --option="dsdb:schema update allowed"=true 2>&1; then
-		echo "✓ Successfully added ldapPublicKey class"
-	else
-		echo "⚠ ldapPublicKey class add failed (may already exist)"
-	fi
-	
-	# Clean up temp files
+	echo "⚠ SSH schema setup failed after $max_retries attempts (schemas may already exist)"
 	rm -f /tmp/Sshpubkey.attr.ldif /tmp/Sshpubkey.class.ldif
+	return 1
 }
 
 configureLAMApplication () {
@@ -856,13 +932,65 @@ validateLAMConfiguration () {
 	fi
 }
 
+validateSSHSchemas () {
+	echo "Validating SSH public key schemas..."
+	local schemas_valid=true
+	
+	# Check for sshPublicKey attribute
+	if ldbsearch -H /var/lib/samba/private/sam.ldb -b "CN=Schema,CN=Configuration,${DOMAIN_DC}" "(cn=sshPublicKey)" cn 2>/dev/null | grep -q "dn: CN=sshPublicKey"; then
+		echo "✓ sshPublicKey attribute schema found"
+	else
+		echo "✗ sshPublicKey attribute schema NOT found"
+		schemas_valid=false
+	fi
+	
+	# Check for ldapPublicKey objectClass
+	if ldbsearch -H /var/lib/samba/private/sam.ldb -b "CN=Schema,CN=Configuration,${DOMAIN_DC}" "(cn=ldapPublicKey)" cn 2>/dev/null | grep -q "dn: CN=ldapPublicKey"; then
+		echo "✓ ldapPublicKey class schema found"
+	else
+		echo "✗ ldapPublicKey class schema NOT found"
+		schemas_valid=false
+	fi
+	
+	if [ "$schemas_valid" = true ]; then
+		echo "✓ All SSH schemas validated successfully"
+		return 0
+	else
+		echo "⚠ Some SSH schemas are missing"
+		return 1
+	fi
+}
+
+waitForSambaReady () {
+	echo "Waiting for Samba AD to be ready..."
+	local max_wait=${SCHEMA_SETUP_DELAY}
+	local elapsed=0
+	local check_interval=2
+	
+	while [ $elapsed -lt $max_wait ]; do
+		# Try to get domain info - if successful, Samba is ready
+		if samba-tool domain info 127.0.0.1 >/dev/null 2>&1; then
+			echo "✓ Samba AD is ready (took ${elapsed}s)"
+			return 0
+		fi
+		
+		echo "Waiting for Samba AD... (${elapsed}s/${max_wait}s)"
+		sleep $check_interval
+		elapsed=$((elapsed + check_interval))
+	done
+	
+	echo "⚠ Samba AD not responding after ${max_wait}s, proceeding anyway..."
+	return 1
+}
+
 appStart () {
 	/usr/bin/supervisord > /var/log/supervisor/supervisor.log 2>&1 &
 	if [ "${1}" = "true" ]; then
-		echo "Sleeping 10 before checking on Domain Users of gid 3000000 and setting up sshPublicKey"
-		sleep 10
+		echo "Checking Samba AD readiness before schema operations..."
+		waitForSambaReady
 		fixDomainUsersGroup
 		setupSSH
+		validateSSHSchemas
 		if [[ ${REGENERATE_CERT,,} == "true" ]]; then
 			echo "Regenerating TLS certificate with IP address..."
 			regenerateSambaTLSCertificate
