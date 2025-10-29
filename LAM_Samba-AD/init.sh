@@ -696,7 +696,7 @@ configureLAMServerProfile () {
 {
 	"ServerURL": "${server_url}",
 	"useTLS": "${use_tls}",
-	"ignoreTLSErrors": ${ignore_tls_errors},
+	"ignoreTLSErrors": "${ignore_tls_errors}",
 	"followReferrals": "false",
 	"pagedResults": "false",
 	"hidePasswordPromptForExpiredPasswords": "false",
