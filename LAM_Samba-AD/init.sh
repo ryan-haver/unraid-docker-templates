@@ -89,11 +89,7 @@ appSetup () {
 	LAM_LOG_LEVEL=${LAM_LOG_LEVEL:-4}
 	
 	# LAM Server Profile Settings (profile.conf)
-	LAM_PROFILE_NAME=${LAM_PROFILE_NAME:-samba-ad}
-	# For backward compatibility, support LAM_DEFAULT_PROFILE but prefer LAM_PROFILE_NAME
-	if [[ -n "${LAM_DEFAULT_PROFILE}" ]] && [[ "${LAM_DEFAULT_PROFILE}" != "samba-ad" ]]; then
-		LAM_PROFILE_NAME="${LAM_DEFAULT_PROFILE}"
-	fi
+	# LAM_PROFILE_NAME is auto-generated from domain name after URDOMAIN is set (see line ~120)
 	LAM_PROFILE_PASSWORD=${LAM_PROFILE_PASSWORD:-lam}
 	LAM_LDAP_METHOD=${LAM_LDAP_METHOD:-ldaps}
 	LAM_USER_SUFFIX=${LAM_USER_SUFFIX:-CN=Users}
@@ -115,6 +111,17 @@ appSetup () {
 	LDOMAIN=${DOMAIN,,}
 	UDOMAIN=${DOMAIN^^}
 	URDOMAIN=${UDOMAIN%%.*}
+
+	# Auto-generate LAM profile name from domain if not specified
+	# Same pattern as hostname: if empty or "samba-ad" (default), use domain-based name
+	if [[ -z "${LAM_PROFILE_NAME}" ]] || [[ "${LAM_PROFILE_NAME}" == "samba-ad" ]]; then
+		# Convert domain to lowercase and use as profile name (e.g., "haver" from "haver.internal")
+		LAM_PROFILE_NAME="${LDOMAIN%%.*}"
+	fi
+	# For backward compatibility, LAM_DEFAULT_PROFILE can still override
+	if [[ -n "${LAM_DEFAULT_PROFILE}" ]] && [[ "${LAM_DEFAULT_PROFILE}" != "samba-ad" ]]; then
+		LAM_PROFILE_NAME="${LAM_DEFAULT_PROFILE}"
+	fi
 
 	# If multi-site, we need to connect to the VPN before joining the domain
 	if [[ ${MULTISITE,,} == "true" ]]; then

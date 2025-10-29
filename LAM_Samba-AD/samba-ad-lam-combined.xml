@@ -142,12 +142,15 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <Config Name="Domain Admin Password" Target="DOMAINPASS" Default="ChangeMe123!@#" Mode="" Description="REQUIRED: Strong Administrator password for Samba AD. Minimum 12+ characters with complexity. Document securely." Type="Variable" Display="always" Required="true" Mask="true">ChangeMe123!@#</Config>
   <Config Name="Host IP Address" Target="HOSTIP" Default="192.168.1.115" Mode="" Description="RECOMMENDED: Expected container IP (e.g., 192.168.1.200). Used for network detection and Samba provisioning. Can differ from actual IP with DHCP - container will auto-detect and notify. Set to 'NONE' to skip IP validation." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.115</Config>
   <Config Name="DNS Forwarder" Target="DNSFORWARDER" Default="192.168.1.1" Mode="" Description="RECOMMENDED: DNS server for external queries (usually router IP like 192.168.1.1). Required for internet name resolution." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.1</Config>
+  <Config Name="LAM Master Password" Target="LAM_MASTER_PASSWORD" Default="lam" Mode="" Description="[APPLICATION] Master password for LAM application. Used to create/edit server profiles through LAM interface. This is NOT the password to access profiles - that's LAM Profile Password below." Type="Variable" Display="always" Required="false" Mask="true">lam</Config>
+  <Config Name="LAM Profile Password" Target="LAM_PROFILE_PASSWORD" Default="" Mode="" Description="[PROFILE] ⚠️ REQUIRED: Password to ACCESS this LDAP server profile after selecting it in LAM. This is the main password you'll use daily. Use a strong password!" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Timezone" Target="TZ" Default="America/Denver" Mode="" Description="Container timezone (informational). Actual timezone set via /etc/localtime volume mount. Should match Unraid host." Type="Variable" Display="always" Required="false" Mask="false">America/Denver</Config>
+  <Config Name="LAM Profile Timezone" Target="LAM_PROFILE_TIMEZONE" Default="America/Denver" Mode="" Description="[PROFILE] Timezone for this server profile. Affects timestamp displays in LAM interface for this profile." Type="Variable" Display="always" Required="false" Mask="false">America/Denver</Config>
   
   <!-- ========================================= -->
   <!-- LAM APPLICATION SETTINGS (config.cfg)   -->
   <!-- Controls LAM app itself, profile management, global settings -->
   <!-- ========================================= -->
-  <Config Name="LAM Master Password" Target="LAM_MASTER_PASSWORD" Default="lam" Mode="" Description="[APPLICATION] Master password for LAM application. Used to create/edit server profiles through LAM interface. This is NOT the password to access profiles - that's LAM Profile Password below." Type="Variable" Display="advanced" Required="false" Mask="true">lam</Config>
   <Config Name="LAM Session Timeout" Target="LAM_SESSION_TIMEOUT" Default="30" Mode="" Description="[APPLICATION] Global session timeout in minutes. Applies to all profiles. Users auto-logged out after this period of inactivity." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
   <Config Name="LAM Log Level" Target="LAM_LOG_LEVEL" Default="4" Mode="" Description="[APPLICATION] Global logging verbosity. 0=off, 1=errors only, 2=warnings, 3=info, 4=debug (recommended for troubleshooting)." Type="Variable" Display="advanced" Required="false" Mask="false">4</Config>
 
@@ -157,8 +160,7 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   <!-- ========================================= -->
   
   <!-- Profile Identity & Security -->
-  <Config Name="LAM Profile Name" Target="LAM_PROFILE_NAME" Default="samba-ad" Mode="" Description="[PROFILE] Internal name for this LDAP server profile. Use alphanumeric, hyphens, underscores only. This creates the profile configuration file." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
-  <Config Name="LAM Profile Password" Target="LAM_PROFILE_PASSWORD" Default="" Mode="" Description="[PROFILE] ⚠️ REQUIRED: Password to ACCESS this LDAP server profile after selecting it in LAM. This is the main password you'll use daily. Use a strong password!" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="LAM Profile Name" Target="LAM_PROFILE_NAME" Default="" Mode="" Description="[PROFILE] Internal name for this LDAP server profile. AUTO-GENERATED from domain name if not specified (e.g., 'haver' from 'haver.internal'). Use alphanumeric, hyphens, underscores only. This creates the profile configuration file." Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
   <Config Name="LAM Admin DNs" Target="LAM_ADMIN_DNS" Default="cn=Administrator,cn=Users" Mode="" Description="[PROFILE] LDAP DNs allowed to manage LAM (semicolon-separated, relative to base DN). Example: 'cn=Administrator,cn=Users' for single admin or 'cn=Admin1,cn=Users;cn=Admin2,cn=Users' for multiple admins. These accounts can login to LAM and manage directory entries. Use semicolon to separate multiple DNs since commas are part of DN syntax." Type="Variable" Display="advanced" Required="false" Mask="false">cn=Administrator,cn=Users</Config>
   <Config Name="LAM Access Level" Target="LAM_ACCESS_LEVEL" Default="100" Mode="" Description="[PROFILE] LAM access level: 100=full write access (default), 0=read-only mode (requires LAM Pro). Read-only prevents all modifications through LAM interface. Useful for auditing or restricted access scenarios." Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
   
@@ -173,7 +175,6 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   
   <!-- Profile-Specific Settings -->
   <Config Name="LAM Profile Language" Target="LAM_PROFILE_LANGUAGE" Default="en_US.utf8:UTF-8:English (USA)" Mode="" Description="[PROFILE] Default language for this server profile's LAM interface. Format: locale:encoding:display_name" Type="Variable" Display="advanced" Required="false" Mask="false">en_US.utf8:UTF-8:English (USA)</Config>
-  <Config Name="LAM Profile Timezone" Target="LAM_PROFILE_TIMEZONE" Default="America/Denver" Mode="" Description="[PROFILE] Timezone for this server profile. Affects timestamp displays in LAM interface for this profile." Type="Variable" Display="advanced" Required="false" Mask="false">America/Denver</Config>
   <Config Name="LAM UID Range" Target="LAM_UID_RANGE" Default="10000-30000" Mode="" Description="[PROFILE] Unix UID number range for new user accounts (format: min-max). LAM automatically assigns UIDs from this range." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
   <Config Name="LAM GID Range" Target="LAM_GID_RANGE" Default="10000-30000" Mode="" Description="[PROFILE] Unix GID number range for new group accounts (format: min-max). LAM automatically assigns GIDs from this range." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
   
@@ -203,7 +204,6 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   
   <!-- TIME SYNC -->
   <Config Name="NTP Server" Target="NTPSERVER" Default="pool.ntp.org" Mode="" Description="NTP server pool for time synchronization. Critical for Kerberos. Uses 0/1/2.{server} subdomain rotation. Default: pool.ntp.org" Type="Variable" Display="advanced" Required="false" Mask="false">pool.ntp.org</Config>
-  <Config Name="Timezone" Target="TZ" Default="America/Denver" Mode="" Description="Container timezone (informational). Actual timezone set via /etc/localtime volume mount. Should match Unraid host." Type="Variable" Display="advanced" Required="false" Mask="false">America/Denver</Config>
   
   <!-- RPC PORT RANGE -->
   <Config Name="RPC Port Range" Target="RPCPORTS" Default="49152-49172" Mode="" Description="ADVANCED: RPC dynamic port range for Samba. Default 49152-49172 is recommended." Type="Variable" Display="advanced" Required="false" Mask="false">49152-49172</Config>
