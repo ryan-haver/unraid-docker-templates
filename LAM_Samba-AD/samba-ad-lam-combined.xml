@@ -145,34 +145,36 @@ NO PORT MAPPING NEEDED - Container uses all standard ports + port 8080 for LAM o
   
   <!-- ========================================= -->
   <!-- LAM APPLICATION SETTINGS (config.cfg)   -->
+  <!-- Controls LAM app itself, profile management, global settings -->
   <!-- ========================================= -->
-  <Config Name="LAM Master Password" Target="LAM_MASTER_PASSWORD" Default="lam" Mode="" Description="LAM APPLICATION: Master password for creating/managing server profiles. Keep default unless you need to manage profiles manually." Type="Variable" Display="advanced" Required="false" Mask="true">lam</Config>
-  <Config Name="LAM Default Profile" Target="LAM_DEFAULT_PROFILE" Default="samba-ad" Mode="" Description="LAM APPLICATION: Which server profile to auto-select at login." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
-  <Config Name="LAM Session Timeout" Target="LAM_SESSION_TIMEOUT" Default="30" Mode="" Description="LAM APPLICATION: Global session timeout in minutes for all profiles." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
-  <Config Name="LAM Log Level" Target="LAM_LOG_LEVEL" Default="4" Mode="" Description="LAM APPLICATION: Global logging level (0=off, 1=error, 2=warning, 3=info, 4=debug)." Type="Variable" Display="advanced" Required="false" Mask="false">4</Config>
+  <Config Name="LAM Master Password" Target="LAM_MASTER_PASSWORD" Default="lam" Mode="" Description="[APPLICATION] Master password for LAM application. Used to create/edit server profiles through LAM interface. This is NOT the password to access profiles - that's LAM Profile Password below." Type="Variable" Display="advanced" Required="false" Mask="true">lam</Config>
+  <Config Name="LAM Default Profile" Target="LAM_DEFAULT_PROFILE" Default="samba-ad" Mode="" Description="[APPLICATION] Which server profile to automatically select at LAM login. Must match a profile name (default: samba-ad)." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
+  <Config Name="LAM Session Timeout" Target="LAM_SESSION_TIMEOUT" Default="30" Mode="" Description="[APPLICATION] Global session timeout in minutes. Applies to all profiles. Users auto-logged out after this period of inactivity." Type="Variable" Display="advanced" Required="false" Mask="false">30</Config>
+  <Config Name="LAM Log Level" Target="LAM_LOG_LEVEL" Default="4" Mode="" Description="[APPLICATION] Global logging verbosity. 0=off, 1=errors only, 2=warnings, 3=info, 4=debug (recommended for troubleshooting)." Type="Variable" Display="advanced" Required="false" Mask="false">4</Config>
 
   <!-- ========================================= -->
   <!-- SERVER PROFILE SETTINGS (profile.conf)  -->
+  <!-- Controls LDAP connection, account management, user/group settings -->
   <!-- ========================================= -->
   
   <!-- Profile Identity & Security -->
-  <Config Name="LAM Profile Name" Target="LAM_PROFILE_NAME" Default="samba-ad" Mode="" Description="SERVER PROFILE: Name for this LDAP server profile (alphanumeric, hyphens, underscores only)." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
-  <Config Name="LAM Profile Password" Target="LAM_PROFILE_PASSWORD" Default="" Mode="" Description="SERVER PROFILE: Password to access this specific LDAP server profile. Use strong password." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="LAM Profile Name" Target="LAM_PROFILE_NAME" Default="samba-ad" Mode="" Description="[PROFILE] Internal name for this LDAP server profile. Use alphanumeric, hyphens, underscores only. This creates the profile configuration file." Type="Variable" Display="advanced" Required="false" Mask="false">samba-ad</Config>
+  <Config Name="LAM Profile Password" Target="LAM_PROFILE_PASSWORD" Default="" Mode="" Description="[PROFILE] ⚠️ REQUIRED: Password to ACCESS this LDAP server profile after selecting it in LAM. This is the main password you'll use daily. Use a strong password!" Type="Variable" Display="always" Required="true" Mask="true"></Config>
   
   <!-- LDAP Connection Settings -->
-  <Config Name="LAM LDAP Method" Target="LAM_LDAP_METHOD" Default="ldaps" Mode="" Description="SERVER PROFILE: LDAP connection method (ldaps=SSL port 636, starttls=StartTLS port 389, ldap=plain port 389)." Type="Variable" Display="advanced" Required="false" Mask="false">ldaps</Config>
+  <Config Name="LAM LDAP Method" Target="LAM_LDAP_METHOD" Default="ldaps" Mode="" Description="[PROFILE] LDAP connection security method. ldaps=encrypted SSL on port 636 (recommended), starttls=encrypted on port 389, ldap=unencrypted port 389 (insecure)." Type="Variable" Display="advanced" Required="false" Mask="false">ldaps</Config>
   
   <!-- Essential Account Management -->
-  <Config Name="LAM User Suffix" Target="LAM_USER_SUFFIX" Default="CN=Users" Mode="" Description="SERVER PROFILE: LDAP container for user accounts (relative to base DN)." Type="Variable" Display="advanced" Required="false" Mask="false">CN=Users</Config>
-  <Config Name="LAM Group Suffix" Target="LAM_GROUP_SUFFIX" Default="CN=Users" Mode="" Description="SERVER PROFILE: LDAP container for group accounts (relative to base DN)." Type="Variable" Display="advanced" Required="false" Mask="false">CN=Users</Config>
-  <Config Name="LAM User Modules" Target="LAM_USER_MODULES" Default="windowsUser,inetOrgPerson" Mode="" Description="SERVER PROFILE: LAM modules for user management (comma-separated)." Type="Variable" Display="advanced" Required="false" Mask="false">windowsUser,inetOrgPerson</Config>
-  <Config Name="LAM Group Modules" Target="LAM_GROUP_MODULES" Default="windowsGroup" Mode="" Description="SERVER PROFILE: LAM modules for group management (comma-separated)." Type="Variable" Display="advanced" Required="false" Mask="false">windowsGroup</Config>
+  <Config Name="LAM User Suffix" Target="LAM_USER_SUFFIX" Default="CN=Users" Mode="" Description="[PROFILE] LDAP container DN for user accounts, relative to domain base DN. Samba AD default is CN=Users (not OU=Users)." Type="Variable" Display="advanced" Required="false" Mask="false">CN=Users</Config>
+  <Config Name="LAM Group Suffix" Target="LAM_GROUP_SUFFIX" Default="CN=Users" Mode="" Description="[PROFILE] LDAP container DN for group accounts, relative to domain base DN. Samba AD default is CN=Users." Type="Variable" Display="advanced" Required="false" Mask="false">CN=Users</Config>
+  <Config Name="LAM User Modules" Target="LAM_USER_MODULES" Default="windowsUser,inetOrgPerson" Mode="" Description="[PROFILE] LAM modules for user account management (comma-separated). windowsUser=AD user attributes, inetOrgPerson=standard LDAP person attributes." Type="Variable" Display="advanced" Required="false" Mask="false">windowsUser,inetOrgPerson</Config>
+  <Config Name="LAM Group Modules" Target="LAM_GROUP_MODULES" Default="windowsGroup" Mode="" Description="[PROFILE] LAM modules for group account management (comma-separated). windowsGroup=AD group attributes." Type="Variable" Display="advanced" Required="false" Mask="false">windowsGroup</Config>
   
   <!-- Profile-Specific Settings -->
-  <Config Name="LAM Profile Language" Target="LAM_PROFILE_LANGUAGE" Default="en_GB.utf8:UTF-8:English (UK)" Mode="" Description="SERVER PROFILE: Default language for this server profile." Type="Variable" Display="advanced" Required="false" Mask="false">en_GB.utf8:UTF-8:English (UK)</Config>
-  <Config Name="LAM Profile Timezone" Target="LAM_PROFILE_TIMEZONE" Default="UTC" Mode="" Description="SERVER PROFILE: Timezone for this server profile." Type="Variable" Display="advanced" Required="false" Mask="false">UTC</Config>
-  <Config Name="LAM UID Range" Target="LAM_UID_RANGE" Default="10000-30000" Mode="" Description="SERVER PROFILE: UID range for new users (format: min-max)." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
-  <Config Name="LAM GID Range" Target="LAM_GID_RANGE" Default="10000-30000" Mode="" Description="SERVER PROFILE: GID range for new groups (format: min-max)." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
+  <Config Name="LAM Profile Language" Target="LAM_PROFILE_LANGUAGE" Default="en_US.utf8:UTF-8:English (USA)" Mode="" Description="[PROFILE] Default language for this server profile's LAM interface. Format: locale:encoding:display_name" Type="Variable" Display="advanced" Required="false" Mask="false">en_US.utf8:UTF-8:English (USA)</Config>
+  <Config Name="LAM Profile Timezone" Target="LAM_PROFILE_TIMEZONE" Default="UTC" Mode="" Description="[PROFILE] Timezone for this server profile. Affects timestamp displays in LAM interface for this profile." Type="Variable" Display="advanced" Required="false" Mask="false">UTC</Config>
+  <Config Name="LAM UID Range" Target="LAM_UID_RANGE" Default="10000-30000" Mode="" Description="[PROFILE] Unix UID number range for new user accounts (format: min-max). LAM automatically assigns UIDs from this range." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
+  <Config Name="LAM GID Range" Target="LAM_GID_RANGE" Default="10000-30000" Mode="" Description="[PROFILE] Unix GID number range for new group accounts (format: min-max). LAM automatically assigns GIDs from this range." Type="Variable" Display="advanced" Required="false" Mask="false">10000-30000</Config>
   
   <!-- DOMAIN TOPOLOGY -->
   <Config Name="Join Existing Domain" Target="JOIN" Default="false" Mode="" Description="false = Create NEW domain (typical). true = Join EXISTING domain as additional DC." Type="Variable" Display="always" Required="false" Mask="false">false</Config>
