@@ -981,7 +981,7 @@ validateLAMConfiguration () {
 		fi
 		
 		# Check required fields in server profile
-		local required_fields=("ServerURL" "treesuffix" "Passwd" "activeTypes" "modules")
+		local required_fields=("ServerURL" "treesuffix" "Passwd" "activeTypes" "typeSettings")
 		for field in "${required_fields[@]}"; do
 			if ! grep -q "\"$field\"" "$profile_file"; then
 				echo "ERROR: Server profile missing required field: $field"
