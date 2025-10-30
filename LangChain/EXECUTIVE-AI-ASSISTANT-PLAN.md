@@ -865,7 +865,7 @@ ANTHROPIC_API_KEY: sk-ant-...
 - Prepare support materials
 
 ### Phase 5: Release
-- Publish Docker image to Docker Hub
+- Publish Docker image to GHCR (GitHub Container Registry)
 - Submit template to Unraid Community Apps
 - Create GitHub repository for template
 - Announce availability
@@ -932,7 +932,7 @@ ANTHROPIC_API_KEY: sk-ant-...
 - [ ] Test with all LLM providers
 
 ### Docker Infrastructure
-- [ ] Set up Docker Hub repository
+- [ ] Set up GitHub Container Registry (GHCR)
 - [ ] Create Dockerfile with all dependencies
 - [ ] Build supervisord configuration
 - [ ] Write entrypoint script with LLM validation

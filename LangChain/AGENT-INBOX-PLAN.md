@@ -891,7 +891,7 @@ echo "$CURRENT_COUNT" > "$LAST_COUNT_FILE"
 ### Phase 2: Pre-Deployment (Day 1)
 
 **Prerequisites**:
-- [ ] Docker Hub account for image hosting
+- [ ] GitHub account with GHCR enabled
 - [ ] LangSmith API key for testing
 - [ ] Running LangGraph deployment for integration testing
 
@@ -1383,7 +1383,7 @@ docker inspect --format='{{.State.Health.Status}}' agent-inbox
 
 **Docker Image Storage**:
 - Size: ~200-300MB compressed
-- Docker Hub: Free for public images
+- GHCR (GitHub Container Registry): Free for public images
 - Cost: $0/month
 
 **Runtime Costs**:
@@ -1595,8 +1595,8 @@ services:
 
 3. **Docker image pull failed**:
    - Check internet connectivity from Unraid
-   - Verify Docker Hub access
-   - Manually pull: `docker pull yourusername/agent-inbox:latest`
+   - Verify GitHub Container Registry access
+   - Manually pull: `docker pull ghcr.io/yourusername/agent-inbox:latest`
 
 4. **Insufficient resources**:
    - Check Unraid dashboard for RAM usage
@@ -2050,7 +2050,7 @@ This template complements the Executive AI Assistant template perfectly, providi
 - [ ] Optimize image size (<300MB)
 - [ ] Implement health check
 - [ ] Test on fresh container
-- [ ] Push to Docker Hub
+- [ ] Push to GHCR (GitHub Container Registry)
 - [ ] Tag versions (latest, v1.0.0, etc.)
 
 ### Unraid Template Creation
