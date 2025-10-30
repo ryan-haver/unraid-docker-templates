@@ -744,21 +744,17 @@ configureLAMServerProfile () {
 	local group_modules_json=$(printf ',"%s"' "${GROUP_MODULES_ARRAY[@]}")
 	group_modules_json="[${group_modules_json:1}]"
 	
-	# Parse semicolon-separated admin DNs and build JSON array
-	# Note: Semicolon delimiter is required because DNs contain commas (e.g., cn=Admin,cn=Users)
+	# Build Admins string (LAM expects a string, not an array)
+	# Note: Semicolon delimiter is required because DNs contain commas (e.g., CN=Admin,CN=Users)
 	echo "DEBUG: LAM_ADMIN_DNS input = '${LAM_ADMIN_DNS}'"
 	IFS=';' read -ra ADMIN_DN_ARRAY <<< "${LAM_ADMIN_DNS}"
 	echo "DEBUG: Array length = ${#ADMIN_DN_ARRAY[@]}"
 	echo "DEBUG: Array contents = ${ADMIN_DN_ARRAY[@]}"
-	local admin_dns_json=""
-	for admin_dn in "${ADMIN_DN_ARRAY[@]}"; do
-		admin_dn=$(echo "$admin_dn" | xargs)  # Trim whitespace
-		echo "DEBUG: Processing admin_dn = '${admin_dn}'"
-		admin_dns_json="${admin_dns_json},\"${admin_dn},${DOMAIN_DC}\""
-		echo "DEBUG: admin_dns_json so far = '${admin_dns_json}'"
-	done
-	admin_dns_json="[${admin_dns_json:1}]"  # Remove leading comma and wrap in brackets
-	echo "DEBUG: Final admin_dns_json = '${admin_dns_json}'"
+	
+	# Take the first admin DN and append domain
+	local admin_dn=$(echo "${ADMIN_DN_ARRAY[0]}" | xargs)  # Trim whitespace
+	local admin_dns_string="${admin_dn},${DOMAIN_DC}"
+	echo "DEBUG: Final admin_dns_string = '${admin_dns_string}'"
 	
 	# Create server profile with proper JSON format for modern LAM
 	local profile_file="/var/www/html/lam/config/${clean_profile_name}.conf"
@@ -777,7 +773,7 @@ configureLAMServerProfile () {
 	"defaultLanguage": "${LAM_PROFILE_LANGUAGE}",
 	"timeZone": "${LAM_PROFILE_TIMEZONE}",
 	"treesuffix": "${DOMAIN_DC}",
-	"Admins": ${admin_dns_json},
+	"Admins": "${admin_dns_string}",
 	"Passwd": "{SHA256}${LAM_PROFILE_HASH}",
 	"searchLimit": 0,
 	"accessLevel": ${LAM_ACCESS_LEVEL},
