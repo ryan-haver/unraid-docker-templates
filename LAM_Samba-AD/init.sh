@@ -777,9 +777,11 @@ configureLAMServerProfile () {
 	"Passwd": "{SHA256}${LAM_PROFILE_HASH}",
 	"searchLimit": 0,
 	"accessLevel": ${LAM_ACCESS_LEVEL},
-	"loginMethod": "fixed",
+	"loginMethod": "search",
 	"loginSearchSuffix": "${DOMAIN_DC}",
 	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
+	"loginSearchDN": "CN=Administrator,CN=Users,${DOMAIN_DC}",
+	"loginSearchPassword": "${DOMAINPASS}",
 	"activeTypes": "user,group",
 	"typeSettings": {
 		"suffix_user": "${user_suffix_dn}",
