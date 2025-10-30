@@ -7,7 +7,7 @@
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/langchain-ai/agent-inbox</Support>
+  <Support>https://github.com/ryan-haver/agent-inbox</Support>
   <Project>https://github.com/langchain-ai/agent-inbox</Project>
   <Overview>Agent Inbox - Modern web interface for interacting with LangGraph agents and the Executive AI Assistant.
 
