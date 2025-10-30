@@ -45,9 +45,11 @@ The Agent Inbox requires a LangGraph deployment to connect to. If you haven't al
 3. Ensure it's running and accessible on port 2024
 
 **Step 2: Install Agent Inbox**
-1. Fill in the port (default: 3000)
+1. Fill in the port (default: 3000, or choose your own like 3006)
 2. Click "Apply" to create the container
-3. Access the web UI at: http://YOUR_UNRAID_IP:3000
+3. Access the web UI at: http://YOUR_UNRAID_IP:[YOUR_CHOSEN_PORT]
+
+**NOTE:** Container logs will always show port 3000 (internal). Use YOUR mapped port to access the UI.
 
 **Step 3: Configure in Browser**
 After opening the web UI:
@@ -293,9 +295,11 @@ For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</
   <Labels/>
   
   <!-- Port Configuration -->
-  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for Agent Inbox web interface" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for Agent Inbox web interface. Note: Container logs show internal port 3000, use YOUR mapped port to access." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   
   <!-- Optional Environment Variables -->
+  <Config Name="Host Port (Auto-detected)" Target="HOST_PORT" Default="3000" Mode="" Description="Host port mapping for logging (auto-populated from Web UI Port). Helps container logs show correct access URL." Type="Variable" Display="advanced-hide" Required="false" Mask="false">[PORT:3000]</Config>
+  
   <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Node.js environment (production recommended)" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
   
   <Config Name="Disable Telemetry" Target="NEXT_TELEMETRY_DISABLED" Default="1" Mode="" Description="Disable Next.js telemetry (1=disabled, 0=enabled)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
