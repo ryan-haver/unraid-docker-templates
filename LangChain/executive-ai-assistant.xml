@@ -1,0 +1,265 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Executive-AI-Assistant</Name>
+  <Repository>ghcr.io/ryan-haver/executive-ai-assistant:latest</Repository>
+  <Registry>https://github.com/ryan-haver/executive-ai-assistant/pkgs/container/executive-ai-assistant</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/ryan-haver/executive-ai-assistant</Support>
+  <Project>https://github.com/langchain-ai/executive-ai-assistant</Project>
+  <Overview>Executive AI Assistant - Your AI-powered email management assistant that drafts professional responses using LangChain and multiple LLM providers.
+
+This intelligent assistant monitors your Gmail inbox, triages emails, drafts professional responses, and helps you manage your communications efficiently using state-of-the-art AI models.
+
+**KEY FEATURES:**
+- 📧 Automated email monitoring and triage
+- ✍️ AI-powered draft response generation
+- 🔄 Multi-LLM support (Ollama, OpenAI, Anthropic)
+- 🎯 Context-aware response generation
+- 📅 Meeting scheduling assistance
+- 🔍 Intelligent email categorization
+- 💾 Persistent conversation history
+- 🔒 Secure OAuth2 Gmail integration
+
+**SUPPORTED LLM PROVIDERS:**
+- **Ollama** - Free, local AI models (llama3.2, llama3.1, etc.)
+- **OpenAI** - GPT-4o, GPT-4o-mini, O1
+- **Anthropic** - Claude 3.5 Sonnet, Claude 3 Haiku
+- **Hybrid Mode** - Ollama with cloud fallback (recommended)
+- **Auto Mode** - Automatically detect available providers
+
+**IMPORTANT - GMAIL OAUTH SETUP (REQUIRED):**
+
+This container REQUIRES Gmail OAuth credentials to function. You must complete this setup BEFORE starting the container.
+
+**Step 1: Create Google Cloud Project**
+1. Go to: https://console.cloud.google.com/
+2. Click "Select a project" → "New Project"
+3. Name it "Executive AI Assistant" and click "Create"
+4. Wait for project creation (notification in top-right corner)
+
+**Step 2: Enable Gmail API**
+1. In your new project, go to "APIs &amp; Services" → "Library"
+2. Search for "Gmail API"
+3. Click "Gmail API" → Click "ENABLE"
+4. Wait for activation (30-60 seconds)
+
+**Step 3: Configure OAuth Consent Screen**
+1. Go to "APIs &amp; Services" → "OAuth consent screen"
+2. Select "External" user type → Click "CREATE"
+3. Fill in required fields:
+   - App name: "Executive AI Assistant"
+   - User support email: Your email
+   - Developer contact: Your email
+4. Click "SAVE AND CONTINUE"
+5. Click "ADD OR REMOVE SCOPES"
+6. Search and select: "Gmail API" → ".../auth/gmail.modify"
+7. Click "UPDATE" → "SAVE AND CONTINUE"
+8. Add your email as a test user → "SAVE AND CONTINUE"
+
+**Step 4: Create OAuth Credentials**
+1. Go to "APIs &amp; Services" → "Credentials"
+2. Click "CREATE CREDENTIALS" → "OAuth client ID"
+3. Application type: "Desktop app"
+4. Name: "Executive AI Assistant Desktop"
+5. Click "CREATE"
+6. Click "DOWNLOAD JSON" (save as client_secret.json)
+7. Click "OK" to close the dialog
+
+**Step 5: Generate OAuth Token**
+Run this command in Unraid terminal (replace /path/to/client_secret.json):
+
+```bash
+docker run --rm -it \
+  -v /path/to/client_secret.json:/app/client_secret.json \
+  ghcr.io/ryan-haver/executive-ai-assistant:latest \
+  python /app/scripts/setup_gmail.py
+```
+
+This will:
+- Display a URL - copy it and paste in your browser
+- You'll be asked to sign in to Google and authorize the app
+- After authorization, copy the code from browser
+- Paste it back in the terminal
+- The script will save your token
+
+**Step 6: Encode Credentials for Unraid**
+After token generation, run these commands to get base64-encoded values:
+
+```bash
+# Encode client secret
+base64 -w 0 /path/to/client_secret.json
+
+# Encode token (created in Step 5)
+base64 -w 0 /path/to/token.json
+```
+
+Copy these base64 strings and paste them into the "Gmail Client Secret" and "Gmail OAuth Token" fields below.
+
+**QUICK START GUIDE:**
+
+**Option 1: Free Local AI (Ollama)**
+1. Install Ollama container from Community Apps
+2. Pull a model: `docker exec ollama ollama pull llama3.2:3b`
+3. Set LLM Provider to: "ollama"
+4. Set Ollama Host to: "http://YOUR_UNRAID_IP:11434"
+5. Configure Gmail OAuth (see above)
+6. Start the container
+
+**Option 2: Cloud AI (OpenAI)**
+1. Get API key from: https://platform.openai.com/api-keys
+2. Set LLM Provider to: "openai"
+3. Paste your API key in "OpenAI API Key" field
+4. Configure Gmail OAuth (see above)
+5. Start the container
+
+**Option 3: Hybrid Mode (Recommended)**
+1. Set up both Ollama and OpenAI/Anthropic
+2. Set LLM Provider to: "hybrid"
+3. Container uses Ollama when available, falls back to cloud
+4. Best of both worlds: free + reliable
+
+**ACCESSING THE ASSISTANT:**
+- WebUI: http://YOUR_UNRAID_IP:2024
+- LangGraph Studio: Connect to http://YOUR_UNRAID_IP:2024
+- Agent Inbox: Install separate Agent Inbox container for GUI
+
+**CRON SCHEDULING:**
+By default, the assistant checks for new emails every 5 minutes. You can customize this:
+- Every 15 minutes: "*/15 * * * *"
+- Every hour: "0 * * * *"
+- 9am-5pm weekdays: "0 9-17 * * 1-5"
+
+**TROUBLESHOOTING:**
+
+**Container won't start / Health check failing:**
+- Check logs: `docker logs executive-ai-assistant`
+- Verify Gmail credentials are base64-encoded correctly
+- Ensure at least one LLM provider is configured
+
+**Gmail OAuth errors:**
+- Re-run setup_gmail.py script to regenerate token
+- Verify OAuth consent screen is configured
+- Check that test users include your email
+- Make sure Gmail API is enabled
+
+**Ollama connection failed:**
+- Verify Ollama is running: `docker ps | grep ollama`
+- Test connection: `curl http://YOUR_UNRAID_IP:11434/api/tags`
+- Check Ollama Host setting matches your setup
+- Ensure network allows container-to-container communication
+
+**No emails being processed:**
+- Check cron logs: `docker exec executive-ai-assistant cat /var/log/eaia/cron.log`
+- Verify email arrived in last X minutes (CRON_MINUTES_SINCE setting)
+- Check Gmail token hasn't expired
+- Review API logs for errors
+
+**SECURITY NOTES:**
+- Gmail credentials are stored in Docker volumes (not visible in Unraid GUI)
+- API keys are masked in the template (not shown in plain text)
+- Consider using Ollama for privacy-sensitive emails
+- LangSmith tracing is optional (disabled by default)
+- Keep your OAuth credentials secure and don't share them
+
+**RESOURCE REQUIREMENTS:**
+- CPU: 0.5-2.0 cores (depending on LLM usage)
+- RAM: 512MB-2GB (depending on model size)
+- Disk: ~1GB for container + email data
+- Network: Internet access for cloud LLMs (optional for Ollama-only)
+
+**DOCKER IMAGE DETAILS:**
+- Base: python:3.12-slim
+- Size: 693MB
+- Services: LangGraph API + Cron scheduler
+- Health Check: Automatic monitoring of all services
+
+For detailed documentation, visit: https://github.com/ryan-haver/executive-ai-assistant</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:2024]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/ryan-haver/unraid-docker-templates/main/LangChain/executive-ai-assistant.xml</TemplateURL>
+  <Icon>https://python.langchain.com/img/brand/wordmark.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>AI-powered email assistant that monitors Gmail, triages emails, and drafts professional responses using LangChain and multiple LLM providers (Ollama, OpenAI, Anthropic).</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>2024</HostPort>
+        <ContainerPort>2024</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/executive-ai-assistant/data</HostDir>
+      <ContainerDir>/app/data</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata/executive-ai-assistant/config</HostDir>
+      <ContainerDir>/app/config</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata/executive-ai-assistant/secrets</HostDir>
+      <ContainerDir>/app/secrets</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata/executive-ai-assistant/logs</HostDir>
+      <ContainerDir>/var/log/eaia</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Labels/>
+  
+  <!-- Required Configuration -->
+  <Config Name="LangGraph API Port" Target="2024" Default="2024" Mode="tcp" Description="Port for LangGraph API and web interface" Type="Port" Display="always" Required="true" Mask="false">2024</Config>
+  
+  <Config Name="Gmail Client Secret (Base64)" Target="GMAIL_SECRET" Default="" Mode="" Description="Base64-encoded client_secret.json from Google Cloud Console (REQUIRED - see Overview for setup instructions)" Type="Variable" Display="always" Required="true" Mask="true"/>
+  
+  <Config Name="Gmail OAuth Token (Base64)" Target="GMAIL_TOKEN" Default="" Mode="" Description="Base64-encoded token.json generated by setup_gmail.py script (REQUIRED - see Overview for setup instructions)" Type="Variable" Display="always" Required="true" Mask="true"/>
+  
+  <!-- LLM Provider Configuration -->
+  <Config Name="LLM Provider" Target="LLM_PROVIDER" Default="auto" Mode="" Description="Choose your AI model provider: 'ollama' (free, local), 'openai' (cloud, paid), 'anthropic' (cloud, paid), 'hybrid' (ollama + cloud fallback), 'auto' (detect available)" Type="Variable" Display="always" Required="true" Mask="false">auto</Config>
+  
+  <Config Name="Ollama Host" Target="OLLAMA_HOST" Default="http://192.168.1.100:11434" Mode="" Description="Ollama server URL (if using Ollama). Use your Unraid IP or container name. Default port is 11434. Example: http://192.168.1.100:11434 or http://ollama:11434" Type="Variable" Display="always" Required="false" Mask="false">http://192.168.1.100:11434</Config>
+  
+  <Config Name="OpenAI API Key" Target="OPENAI_API_KEY" Default="" Mode="" Description="OpenAI API key (if using OpenAI). Get from: https://platform.openai.com/api-keys. Format: sk-proj-..." Type="Variable" Display="always" Required="false" Mask="true"/>
+  
+  <Config Name="Anthropic API Key" Target="ANTHROPIC_API_KEY" Default="" Mode="" Description="Anthropic API key (if using Claude). Get from: https://console.anthropic.com/settings/keys. Format: sk-ant-..." Type="Variable" Display="always" Required="false" Mask="true"/>
+  
+  <!-- Cron Configuration -->
+  <Config Name="Cron Schedule" Target="CRON_SCHEDULE" Default="*/5 * * * *" Mode="" Description="How often to check for new emails (cron format). Default: */5 * * * * (every 5 minutes). Examples: */15 * * * * (every 15 min), 0 * * * * (hourly), 0 9-17 * * 1-5 (9am-5pm weekdays)" Type="Variable" Display="always" Required="false" Mask="false">*/5 * * * *</Config>
+  
+  <Config Name="Minutes Since Last Check" Target="CRON_MINUTES_SINCE" Default="10" Mode="" Description="How many minutes back to look for emails on each cron run. Should be at least equal to your cron frequency. Default: 10" Type="Variable" Display="always" Required="false" Mask="false">10</Config>
+  
+  <!-- Volume Mappings -->
+  <Config Name="Data Directory" Target="/app/data" Default="/mnt/user/appdata/executive-ai-assistant/data" Mode="rw" Description="Persistent data storage for email history and state" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/executive-ai-assistant/data</Config>
+  
+  <Config Name="Config Directory" Target="/app/config" Default="/mnt/user/appdata/executive-ai-assistant/config" Mode="rw" Description="Configuration files directory" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/executive-ai-assistant/config</Config>
+  
+  <Config Name="Secrets Directory" Target="/app/secrets" Default="/mnt/user/appdata/executive-ai-assistant/secrets" Mode="rw" Description="Secrets storage (alternative to env vars for credentials)" Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/executive-ai-assistant/secrets</Config>
+  
+  <Config Name="Logs Directory" Target="/var/log/eaia" Default="/mnt/user/appdata/executive-ai-assistant/logs" Mode="rw" Description="Application and cron logs for debugging" Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/executive-ai-assistant/logs</Config>
+  
+  <!-- Optional Advanced Configuration -->
+  <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Container timezone (affects cron schedule). Examples: America/New_York, America/Chicago, America/Los_Angeles, Europe/London, UTC" Type="Variable" Display="advanced" Required="false" Mask="false">America/New_York</Config>
+  
+  <Config Name="LangSmith API Key" Target="LANGSMITH_API_KEY" Default="" Mode="" Description="Optional: LangSmith API key for tracing and debugging. Get from: https://smith.langchain.com/settings. Leave empty to disable." Type="Variable" Display="advanced" Required="false" Mask="true"/>
+  
+  <Config Name="LangSmith Tracing" Target="LANGCHAIN_TRACING_V2" Default="false" Mode="" Description="Enable LangSmith tracing (requires LangSmith API Key). Set to 'true' to enable, 'false' to disable." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  
+  <Config Name="LangSmith Project" Target="LANGCHAIN_PROJECT" Default="executive-ai-assistant" Mode="" Description="LangSmith project name for organizing traces" Type="Variable" Display="advanced" Required="false" Mask="false">executive-ai-assistant</Config>
+  
+  <Config Name="Log Level" Target="LOG_LEVEL" Default="INFO" Mode="" Description="Logging verbosity: DEBUG (most detailed), INFO (normal), WARNING (warnings only), ERROR (errors only)" Type="Variable" Display="advanced" Required="false" Mask="false">INFO</Config>
+</Container>
