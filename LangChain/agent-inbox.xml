@@ -1,0 +1,280 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Agent-Inbox</Name>
+  <Repository>ghcr.io/ryan-haver/agent-inbox:latest</Repository>
+  <Registry>https://github.com/ryan-haver/agent-inbox/pkgs/container/agent-inbox</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/langchain-ai/agent-inbox</Support>
+  <Project>https://github.com/langchain-ai/agent-inbox</Project>
+  <Overview>Agent Inbox - Modern web interface for interacting with LangGraph agents and the Executive AI Assistant.
+
+The Agent Inbox provides a beautiful, intuitive UI for managing human-in-the-loop interactions with your LangGraph agents. It's the perfect companion to the Executive AI Assistant, allowing you to review email drafts, approve actions, and provide feedback through an elegant web interface.
+
+**KEY FEATURES:**
+- 🎨 Modern, intuitive web interface
+- 📧 Review and approve AI-drafted email responses
+- ✏️ Edit agent actions before execution
+- 💬 Respond to agent questions and interrupts
+- 🔄 Real-time updates from LangGraph deployments
+- 🎯 Multiple inbox support (manage different agents)
+- 🌐 Stateless design (no data storage, all config in browser)
+- 🔒 Secure browser-based configuration
+
+**STATELESS &amp; SECURE:**
+- No volumes required - completely stateless
+- All configuration stored in browser local storage
+- No server-side secrets or API keys
+- Each user/browser configures independently
+- Clear browser data = reset configuration
+
+**PERFECT FOR:**
+- Executive AI Assistant email management
+- Any LangGraph agent with human interrupts
+- Multi-agent workflow management
+- Development and testing of LangGraph apps
+
+**QUICK START GUIDE:**
+
+**Step 1: Install Executive AI Assistant**
+The Agent Inbox requires a LangGraph deployment to connect to. If you haven't already:
+1. Install the "Executive AI Assistant" container from Community Apps
+2. Complete the Gmail OAuth setup
+3. Ensure it's running and accessible on port 2024
+
+**Step 2: Install Agent Inbox**
+1. Fill in the port (default: 3000)
+2. Click "Apply" to create the container
+3. Access the web UI at: http://YOUR_UNRAID_IP:3000
+
+**Step 3: Configure in Browser**
+After opening the web UI:
+
+1. **Add LangSmith API Key** (Settings icon in sidebar)
+   - Get your key from: https://smith.langchain.com/settings
+   - Click "Settings" → Enter your LangSmith API key
+   - This authenticates requests to LangGraph deployments
+
+2. **Create Your First Inbox** (Settings → "Add Inbox")
+   - Click the settings popover (bottom left in sidebar)
+   - Click "Add Inbox"
+   - Fill in three fields:
+
+**Required Fields:**
+- **Assistant/Graph ID**: The name of your LangGraph graph
+  - For Executive AI Assistant, use: "email_assistant" (or check langgraph.json)
+  - This tells the inbox which agent to connect to
+
+- **Deployment URL**: The URL of your LangGraph deployment
+  - For Unraid Executive AI Assistant: http://YOUR_UNRAID_IP:2024
+  - For container name: http://executive-ai-assistant:2024
+  - For LangGraph Cloud: https://your-deployment.langchain.com
+
+- **Name**: (Optional) A friendly name for this inbox
+  - Example: "My Email Assistant"
+  - Example: "Production Agent"
+  - This is just a label in the UI
+
+**Step 4: Start Using**
+- The inbox will automatically connect to your agent
+- When your Executive AI Assistant encounters an email, you'll see it in the inbox
+- Review the draft, edit if needed, and approve or respond
+- All changes sync immediately with the agent
+
+**CONNECTING TO EXECUTIVE AI ASSISTANT:**
+
+**Option 1: Using Unraid IP (Recommended)**
+- Deployment URL: `http://192.168.1.100:2024` (use your Unraid IP)
+- Works from any device on your network
+- Easy to remember and share
+
+**Option 2: Using Container Name (Advanced)**
+- Deployment URL: `http://executive-ai-assistant:2024`
+- Only works from containers on same Docker network
+- Requires custom network configuration
+
+**CONFIGURATION NOTES:**
+
+**Browser Local Storage:**
+- LangSmith API key stored in browser
+- Inbox configurations stored in browser
+- Settings persist across container restarts
+- Each browser/device needs separate configuration
+
+**Multiple Inboxes:**
+- You can create multiple inboxes for different agents
+- Switch between them using the sidebar
+- Each inbox connects to a different LangGraph deployment
+
+**No Data Persistence:**
+- Container is completely stateless
+- No volumes, no local storage, no databases
+- All state lives in your browser
+- Container restarts won't affect your configuration
+
+**TROUBLESHOOTING:**
+
+**Can't Connect to Executive AI Assistant:**
+1. Verify Executive AI Assistant is running:
+   ```
+   docker ps | grep executive-ai-assistant
+   ```
+
+2. Test the connection from your browser:
+   - Open: http://YOUR_UNRAID_IP:2024
+   - Should see a JSON response or LangGraph page
+
+3. Check the Deployment URL in Agent Inbox:
+   - Must use Unraid IP, not localhost
+   - Port must be 2024 (default)
+   - Format: http://IP:PORT (no trailing slash)
+
+4. Verify LangSmith API key:
+   - Must be valid and active
+   - Get from: https://smith.langchain.com/settings
+   - Re-enter if unsure
+
+**No Interrupts Appearing:**
+1. Check Executive AI Assistant logs:
+   ```
+   docker logs executive-ai-assistant
+   ```
+
+2. Verify email ingestion is working:
+   - Check cron logs in Executive AI Assistant
+   - Ensure Gmail OAuth is configured correctly
+
+3. Confirm graph/assistant ID:
+   - Should match the ID in langgraph.json
+   - Usually "email_assistant" for Executive AI Assistant
+
+**Configuration Not Saving:**
+- Configuration is saved in browser local storage
+- Check browser console for errors (F12)
+- Try clearing browser cache and reconfiguring
+- Ensure cookies are enabled
+
+**Page Won't Load:**
+1. Check container logs:
+   ```
+   docker logs agent-inbox
+   ```
+
+2. Verify port 3000 is not in use:
+   ```
+   netstat -an | grep 3000
+   ```
+
+3. Try restarting the container:
+   ```
+   docker restart agent-inbox
+   ```
+
+**RESOURCE REQUIREMENTS:**
+- CPU: 0.25-1.0 cores (minimal usage)
+- RAM: 128MB-512MB (lightweight Next.js app)
+- Disk: ~300MB (container image)
+- Network: Internet access for LangSmith API
+
+**INTEGRATION WITH EXECUTIVE AI ASSISTANT:**
+
+This container is designed to work seamlessly with the Executive AI Assistant:
+
+1. **Email Review Workflow:**
+   - Executive AI Assistant receives email
+   - AI drafts response and creates interrupt
+   - Interrupt appears in Agent Inbox
+   - You review, edit, and approve
+   - Email sent with your approval
+
+2. **Human-in-the-Loop:**
+   - Agent encounters decision point
+   - Sends interrupt to Agent Inbox
+   - You provide guidance or make choice
+   - Agent continues with your input
+
+3. **Multi-Agent Support:**
+   - Create separate inboxes for different agents
+   - Manage email assistant, calendar agent, research agent, etc.
+   - Switch between inboxes in sidebar
+
+**SECURITY NOTES:**
+- No secrets stored in container
+- All authentication in browser local storage
+- Stateless design = no data at rest
+- Non-root user (nextjs, UID 1001)
+- Minimal Alpine Linux base
+- No telemetry or tracking
+
+**USEFUL COMMANDS:**
+
+**View Logs:**
+```bash
+docker logs agent-inbox
+```
+
+**Restart Container:**
+```bash
+docker restart agent-inbox
+```
+
+**Check Health:**
+```bash
+docker inspect agent-inbox | grep Health -A 10
+```
+
+**Test Connection:**
+```bash
+curl http://localhost:3000
+```
+
+**DOCKER IMAGE DETAILS:**
+- Base: node:20-alpine (minimal footprint)
+- Size: 266MB
+- Build: Multi-stage optimized
+- User: nextjs (non-root)
+- Health Check: Automatic HTTP verification
+
+**LINKS:**
+- **Agent Inbox GitHub**: https://github.com/langchain-ai/agent-inbox
+- **LangGraph Docs**: https://langchain-ai.github.io/langgraph/
+- **LangSmith**: https://smith.langchain.com/
+- **Docker Hub**: https://hub.docker.com/r/ryan-haver/agent-inbox
+
+For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:3000]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/ryan-haver/unraid-docker-templates/main/LangChain/agent-inbox.xml</TemplateURL>
+  <Icon>https://python.langchain.com/img/brand/wordmark.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>Modern web interface for managing human-in-the-loop interactions with LangGraph agents and the Executive AI Assistant. Stateless design with browser-based configuration.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>3000</HostPort>
+        <ContainerPort>3000</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data/>
+  <Labels/>
+  
+  <!-- Port Configuration -->
+  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for Agent Inbox web interface" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  
+  <!-- Optional Environment Variables -->
+  <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Node.js environment (production recommended)" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
+  
+  <Config Name="Disable Telemetry" Target="NEXT_TELEMETRY_DISABLED" Default="1" Mode="" Description="Disable Next.js telemetry (1=disabled, 0=enabled)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  
+  <!-- Note: Configuration done in browser UI, not via environment variables -->
+</Container>
