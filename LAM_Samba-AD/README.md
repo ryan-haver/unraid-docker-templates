@@ -1,6 +1,17 @@
 # Samba Active Directory + LAM Combined Container
 
+**Status**: ✅ **PRODUCTION READY** - Authentication Working (October 30, 2025)
+
 A unified Docker container combining Samba Active Directory Domain Controller with LDAP Account Manager (LAM) for simplified LDAP management in testing and lab environments.
+
+## 📚 Documentation
+
+**NEW!** Complete documentation index: **[DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)**
+
+- 🚀 Quick Start: [QUICK-START.md](QUICK-START.md)
+- 🐛 Troubleshooting: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- ✅ Validation: [VALIDATION-PLAN.md](VALIDATION-PLAN.md)
+- 📖 All Docs: [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)
 
 ## ⚠️ Important Notice
 
@@ -151,11 +162,35 @@ docker run -d \
 
 ## Usage
 
+### ✅ Critical Configuration (VERIFIED WORKING)
+
+**These settings MUST be correct** (validated October 30, 2025):
+
+| Setting | Correct Value | Wrong Value | Impact |
+|---------|---------------|-------------|--------|
+| `loginMethod` | `"list"` | `"fixed"` ❌ | "fixed" doesn't exist → authentication fails |
+| `attr_user` | `"#sAMAccountName;#givenName;#sn;#mail"` | Including employeeNumber, department, title | Missing attributes → TypeError |
+| `Admins` format | STRING: `"CN=Administrator,CN=Users,DC=haver,DC=internal"` | Array `["CN=..."]` ❌ | LAM can't parse array |
+| DN case | UPPERCASE: `CN=...` `DC=...` | lowercase: `cn=...` `dc=...` ❌ | Case sensitivity issues |
+| Config structure | `typeSettings` | `types`/`modules` ❌ | Old LAM format → doesn't load |
+
+**Validation**: Run `python3 scripts/validate_lam_config.py` before deployment!
+
+See [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) for complete configuration reference.
+
 ### Accessing LAM Web Interface
 
 1. Open browser: `http://192.168.1.200:8080` (use your container IP)
-2. Login with LAM master password (set via `LAM_PASSWORD` variable)
-3. LAM is auto-configured to connect to Samba AD via `ldaps://127.0.0.1:636`
+2. Select **"haver"** profile
+3. **Login with dropdown** (NOT text field):
+   - Select **"Administrator"** from dropdown
+   - Enter domain password (your DOMAINPASS value)
+4. LAM is auto-configured to connect to Samba AD via `ldaps://127.0.0.1:636`
+
+> ✅ **Working Config**: loginMethod is "list" which shows dropdown of admin DNs  
+> ❌ **Never use**: loginMethod "fixed" (doesn't exist in LAM 9.3!)
+
+**Troubleshooting**: If you see errors, read [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ### Managing Samba AD DC
 

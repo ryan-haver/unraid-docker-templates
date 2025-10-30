@@ -1,6 +1,8 @@
 # Quick Start Guide - Samba AD + LAM Combined Container
 
-## 🚀 60-Second Deployment
+**Status**: ✅ **VERIFIED WORKING** (October 30, 2025)
+
+## 🚀 15-Minute Deployment
 
 ### Prerequisites Check
 - [ ] Unraid server running Docker
@@ -8,12 +10,11 @@
 - [ ] Available IP address (e.g., `192.168.1.200`)
 - [ ] Know your router IP (e.g., `192.168.1.1`)
 
-### Step 1: Build Image (5 minutes)
-```bash
-cd C:\scripts\unraid-templates\LAM_Samba-AD
-docker build -t ghcr.io/ryan-haver/samba-ad-lam:latest .
+> 📚 **Full Documentation**: See [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)
 
-# OR just pull from GitHub Container Registry (if already set up):
+### Step 1: Pull Image (1 minute)
+```bash
+# Pull from GitHub Container Registry (recommended - no account needed!)
 docker pull ghcr.io/ryan-haver/samba-ad-lam:latest
 ```
 
@@ -31,25 +32,32 @@ Copy-Item "samba-ad-lam-combined.xml" "\\192.168.1.110\flash\config\plugins\dock
    ```
    Container IP:        192.168.1.200
    Domain Name:         example.com
-   Domain Password:     YourStr0ngP@ss!
+   Domain Password:     YourStr0ngP@ss!  (save this - needed for LAM login!)
    Host IP:             192.168.1.200
    DNS Forwarder:       192.168.1.1
-   LAM Password:        your-lam-secret
+   LAM Password:        your-lam-secret   (for LAM master config)
    ```
 5. Click **Apply**
 
 ### Step 4: Wait for Provisioning (2-3 minutes)
 ```bash
 # Watch the logs
-docker logs -f samba-ad-lam
+docker logs -f Samba-AD-LAM
 
 # Wait for: "LAM configuration complete"
 ```
 
 ### Step 5: Access LAM (30 seconds)
 1. Open browser: `http://192.168.1.200:8080`
-2. Login with LAM password: `your-lam-secret`
-3. Start managing users and groups!
+2. Select **"haver"** profile (auto-named from domain)
+3. **Login** (IMPORTANT):
+   - You'll see a **DROPDOWN** (not text field)
+   - Select **"Administrator"** from dropdown
+   - Enter **Domain Password** (DOMAINPASS from Step 3)
+   - Click Login
+4. ✅ You should now see the LAM dashboard with user management!
+
+> ⚠️ **Common Mistake**: Don't use LAM Password here - use Domain Password (DOMAINPASS)!
 
 ---
 
