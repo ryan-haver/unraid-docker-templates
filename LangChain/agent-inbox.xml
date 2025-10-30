@@ -97,6 +97,19 @@ After opening the web UI:
 
 **CONFIGURATION NOTES:**
 
+**⚠️ CRITICAL - Browser Data Warning:**
+- **DO NOT clear browser cache/cookies** for the Agent Inbox domain
+- Clearing browser data will **DELETE ALL your configuration**
+- This includes: LangSmith key, inbox settings, deployment URLs
+- No server-side backup exists - all config lives in browser only
+
+**How to Backup Configuration (Recommended):**
+1. Open browser DevTools (F12)
+2. Application tab → Local Storage → Your domain
+3. Right-click → Copy all key-value pairs
+4. Save to a text file securely
+5. To restore: Paste back before first use after clearing data
+
 **Browser Local Storage:**
 - LangSmith API key stored in browser
 - Inbox configurations stored in browser
@@ -153,8 +166,19 @@ After opening the web UI:
 **Configuration Not Saving:**
 - Configuration is saved in browser local storage
 - Check browser console for errors (F12)
-- Try clearing browser cache and reconfiguring
-- Ensure cookies are enabled
+- Ensure cookies/local storage are enabled
+- DO NOT clear browser data for this domain (you'll lose all config!)
+
+**⚠️ IMPORTANT - Configuration Backup:**
+- All configuration is stored in BROWSER local storage only
+- Clearing browser cache/cookies will DELETE your configuration
+- You'll need to re-enter LangSmith key and recreate all inboxes
+- To backup configuration:
+  1. Open browser DevTools (F12)
+  2. Go to Application → Local Storage
+  3. Find your domain and export the data
+  4. Save it securely
+- To restore: Re-import the data in DevTools before first use
 
 **Page Won't Load:**
 1. Check container logs:
