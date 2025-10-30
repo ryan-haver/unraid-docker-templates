@@ -77,9 +77,9 @@ appSetup () {
 	fi
 	
 	# Auto-generate DOMAIN_DC from DOMAIN if not explicitly set
-	# Convert domain.example.com to dc=domain,dc=example,dc=com
+	# Convert domain.example.com to DC=domain,DC=example,DC=com (uppercase for Samba AD)
 	if [[ -z "${DOMAIN_DC}" ]]; then
-		DOMAIN_DC=$(echo "${DOMAIN}" | sed 's/\./,dc=/g' | sed 's/^/dc=/')
+		DOMAIN_DC=$(echo "${DOMAIN}" | sed 's/\./,DC=/g' | sed 's/^/DC=/')
 		echo "Auto-generated DOMAIN_DC: ${DOMAIN_DC}"
 	fi
 	
