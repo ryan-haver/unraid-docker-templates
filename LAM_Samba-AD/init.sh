@@ -781,49 +781,44 @@ configureLAMServerProfile () {
 	"loginSearchSuffix": "${DOMAIN_DC}",
 	"loginSearchFilter": "(&(objectClass=user)(sAMAccountName=%USER%))",
 	"activeTypes": "user,group",
-	"modules": {
-		"user": ${user_modules_json},
-		"group": ${group_modules_json}
-	},
-	"types": {
-		"user": {
-			"suffix": "${user_suffix_dn}",
-			"attr": ["#sAMAccountName", "#givenName", "#sn", "#mail", "#employeeNumber", "#department", "#title", "memberOf"],
-			"modules": "${LAM_USER_MODULES}"
-		},
-		"group": {
-			"suffix": "${group_suffix_dn}",
-			"attr": ["#cn", "#description", "#member"],
-			"modules": "${LAM_GROUP_MODULES}"
-		}
+	"typeSettings": {
+		"suffix_user": "${user_suffix_dn}",
+		"attr_user": "#sAMAccountName;#givenName;#sn;#mail;#employeeNumber;#department;#title;memberOf",
+		"modules_user": "${LAM_USER_MODULES}",
+		"suffix_group": "${group_suffix_dn}",
+		"attr_group": "#cn;#description;#member",
+		"modules_group": "${LAM_GROUP_MODULES}"
 	},
 	"moduleSettings": {
-		"posixAccount_user": {
-			"minUID": "${user_uid_min}",
-			"maxUID": "${user_uid_max}",
-			"minMachine": "50000",
-			"maxMachine": "60000"
-		},
-		"posixGroup_group": {
-			"minGID": "${group_gid_min}",
-			"maxGID": "${group_gid_max}"
-		},
-		"windowsUser_user": {
-			"sambaDomainName": "${URDOMAIN}",
-			"windowsUser_hidemsSFU30Name": "false",
-			"windowsUser_hidemsSFU30NisDomain": "false",
-			"windowsUser_hideunixHomeDirectory": "false",
-			"windowsUser_hideunixLoginShell": "false"
-		},
-		"windowsGroup_group": {
-			"sambaDomainName": "${URDOMAIN}",
-			"windowsGroup_hidemsSFU30Name": "false"
-		},
-		"inetOrgPerson_user": {
-			"inetOrgPerson_hideDescription": "false",
-			"inetOrgPerson_hideTelephoneNumber": "false",
-			"inetOrgPerson_hideMobile": "false"
-		}
+		"posixAccount_user_minUID": ["${user_uid_min}"],
+		"posixAccount_user_maxUID": ["${user_uid_max}"],
+		"posixAccount_host_minMachine": ["50000"],
+		"posixAccount_host_maxMachine": ["60000"],
+		"posixGroup_group_minGID": ["${group_gid_min}"],
+		"posixGroup_group_maxGID": ["${group_gid_max}"],
+		"windowsUser_domains": ["${UDOMAIN}"],
+		"windowsUser_hidesAMAccountName": ["false"],
+		"windowsUser_hidemsSFU30Name": ["false"],
+		"windowsUser_hidemsSFU30NisDomain": ["false"],
+		"windowsUser_hideunixHomeDirectory": ["false"],
+		"windowsUser_hideunixLoginShell": ["false"],
+		"windowsGroup_hidemsSFU30Name": ["false"],
+		"inetOrgPerson_hideDescription": ["false"],
+		"inetOrgPerson_hideTelephoneNumber": ["false"],
+		"inetOrgPerson_hideMobile": ["false"]
+	},
+	"toolSettings": {
+		"treeViewSuffix": "${DOMAIN_DC}",
+		"tool_hide_toolServerInformation": "false",
+		"tool_hide_toolFileUpload": "false",
+		"tool_hide_toolMultiEdit": "false",
+		"tool_hide_toolPDFEditor": "false",
+		"tool_hide_toolOUEditor": "false",
+		"tool_hide_toolProfileEditor": "false",
+		"tool_hide_ImportExport": "false",
+		"tool_hide_toolSchemaBrowser": "false",
+		"tool_hide_TreeViewTool": "false",
+		"tool_hide_toolTests": "false"
 	}
 }
 EOF
