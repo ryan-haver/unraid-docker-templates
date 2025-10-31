@@ -295,10 +295,10 @@ For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</
   <Labels/>
   
   <!-- Port Configuration -->
-  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for Agent Inbox web interface. Note: Container logs show internal port 3000, use YOUR mapped port to access." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for Agent Inbox web interface. Map this to your desired host port (e.g., 3006). Container logs will show your mapped port." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   
   <!-- Optional Environment Variables -->
-  <Config Name="Host Port (Auto-detected)" Target="HOST_PORT" Default="3000" Mode="" Description="Host port mapping for logging (auto-populated from Web UI Port). Helps container logs show correct access URL." Type="Variable" Display="advanced-hide" Required="false" Mask="false">[PORT:3000]</Config>
+  <Config Name="Host Port" Target="HOST_PORT" Default="" Mode="" Description="Host port mapping for accurate logging. Set this to match your 'Web UI Port' above (e.g., if you set Web UI Port to 3006, set this to 3006). Helps container logs show the correct access URL." Type="Variable" Display="always" Required="false" Mask="false"/>
   
   <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Node.js environment (production recommended)" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
   
