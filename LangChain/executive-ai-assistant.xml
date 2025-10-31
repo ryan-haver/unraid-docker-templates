@@ -32,41 +32,85 @@ This intelligent assistant monitors your Gmail inbox, triages emails, drafts pro
 
 **IMPORTANT - GMAIL OAUTH SETUP (REQUIRED):**
 
-This container REQUIRES Gmail OAuth credentials to function. You must complete this setup BEFORE starting the container.
+This container REQUIRES Gmail OAuth credentials to function. You have TWO OPTIONS for setup:
+
+**🎯 OPTION 1: WEB-BASED SETUP (RECOMMENDED - EASIEST)**
+
+NEW! Use the built-in Setup UI for a streamlined 3-5 minute setup process:
+
+1. Start the container (it will run in degraded mode without credentials)
+2. Access the Setup UI at: **http://YOUR-SERVER-IP:2025/setup**
+3. Follow the on-screen instructions:
+   - Download your client_secret.json from Google Cloud Console (see steps below)
+   - Upload the file via drag-and-drop interface
+   - Click "Connect to Gmail" to authorize
+   - Complete OAuth flow in browser
+   - Done! Container automatically starts processing emails
+
+The Setup UI handles all credential storage and validation automatically. No terminal commands required!
+
+**📋 OPTION 2: MANUAL SETUP (ADVANCED)**
+
+If you prefer manual setup or need to troubleshoot, follow the detailed steps below to generate and base64-encode your credentials.
+
+---
+
+**OAUTH PREREQUISITES (Required for Both Options):**
+
+Before using either setup method, you must create a Google Cloud Project and OAuth credentials:
 
 **Step 1: Create Google Cloud Project**
 1. Go to: https://console.cloud.google.com/
-2. Click "Select a project" → "New Project"
-3. Name it "Executive AI Assistant" and click "Create"
-4. Wait for project creation (notification in top-right corner)
+2. Click the project selector dropdown in the **upper left** (shows current project name or "Select a project")
+3. Click "NEW PROJECT" button in the dialog
+4. Enter project name: "Executive AI Assistant"
+5. (Optional) Edit the project ID if desired
+6. Click "CREATE"
+7. Wait for project creation (notification appears in top-right)
+8. **Important**: Select your new project from the dropdown to activate it
 
 **Step 2: Enable Gmail API**
-1. In your new project, go to "APIs &amp; Services" → "Library"
-2. Search for "Gmail API"
-3. Click "Gmail API" → Click "ENABLE"
-4. Wait for activation (30-60 seconds)
+1. In your project, go to "APIs &amp; Services" → "Enabled APIs &amp; services"
+2. Click "+ ENABLE APIS AND SERVICES" (blue button at top)
+3. Search for "Gmail API"
+4. Click on "Gmail API" in results
+5. Click "ENABLE" button
+6. Wait for activation (30-60 seconds)
 
 **Step 3: Configure OAuth Consent Screen**
 1. Go to "APIs &amp; Services" → "OAuth consent screen"
-2. Select "External" user type → Click "CREATE"
-3. Fill in required fields:
+2. Choose "User type":
+   - **External** (for personal Gmail accounts - most users)
+   - **Internal** (only for Google Workspace organizations)
+3. Click "CREATE"
+4. Fill in required app information:
    - App name: "Executive AI Assistant"
-   - User support email: Your email
-   - Developer contact: Your email
-4. Click "SAVE AND CONTINUE"
-5. Click "ADD OR REMOVE SCOPES"
-6. Search and select: "Gmail API" → ".../auth/gmail.modify"
-7. Click "UPDATE" → "SAVE AND CONTINUE"
-8. Add your email as a test user → "SAVE AND CONTINUE"
+   - User support email: Your email address
+   - (Optional) App logo, privacy policy, terms of service
+5. Click "SAVE AND CONTINUE"
+6. Add Scopes:
+   - Click "ADD OR REMOVE SCOPES"
+   - Search for "Gmail API"
+   - Select ".../auth/gmail.modify" scope
+   - Click "UPDATE"
+   - Click "SAVE AND CONTINUE"
+7. Add Test Users (required for External apps):
+   - Click "ADD USERS"
+   - Enter your Gmail address
+   - Click "ADD"
+   - Click "SAVE AND CONTINUE"
+8. Review summary and click "BACK TO DASHBOARD"
 
-**Step 4: Create OAuth Credentials**
+**Step 4: Create OAuth Client ID Credentials**
 1. Go to "APIs &amp; Services" → "Credentials"
-2. Click "CREATE CREDENTIALS" → "OAuth client ID"
-3. Application type: "Desktop app"
-4. Name: "Executive AI Assistant Desktop"
-5. Click "CREATE"
-6. Click "DOWNLOAD JSON" (save as client_secret.json)
-7. Click "OK" to close the dialog
+2. Click "+ CREATE CREDENTIALS" at top
+3. Select "OAuth client ID"
+4. Application type: **Desktop app**
+5. Name: "Executive AI Assistant Desktop Client"
+6. Click "CREATE"
+7. In the popup, click "DOWNLOAD JSON"
+8. Save as `client_secret.json` (remember the location!)
+9. Click "OK" to close the dialog
 
 **Step 5: Generate OAuth Token**
 Run this command in Unraid terminal (replace /path/to/client_secret.json):
@@ -122,9 +166,17 @@ Copy these base64 strings and paste them into the "Gmail Client Secret" and "Gma
 4. Best of both worlds: free + reliable
 
 **ACCESSING THE ASSISTANT:**
-- WebUI: http://YOUR_UNRAID_IP:2024
+- Setup UI: http://YOUR_UNRAID_IP:2025/setup (for OAuth configuration)
+- LangGraph API: http://YOUR_UNRAID_IP:2024 (main API and web interface)
 - LangGraph Studio: Connect to http://YOUR_UNRAID_IP:2024
 - Agent Inbox: Install separate Agent Inbox container for GUI
+
+**FIRST-TIME SETUP:**
+1. Start the container
+2. Visit http://YOUR_UNRAID_IP:2025/setup in your browser
+3. Upload your client_secret.json file
+4. Complete the OAuth authorization flow
+5. Container will automatically start processing emails
 
 **CRON SCHEDULING:**
 By default, the assistant checks for new emails every 5 minutes. You can customize this:
@@ -173,12 +225,12 @@ By default, the assistant checks for new emails every 5 minutes. You can customi
 **DOCKER IMAGE DETAILS:**
 - Base: python:3.12-slim
 - Size: 693MB
-- Services: LangGraph API + Cron scheduler
+- Services: LangGraph API (port 2024) + Setup UI (port 2025) + Cron scheduler
 - Health Check: Automatic monitoring of all services
 
 For detailed documentation, visit: https://github.com/ryan-haver/executive-ai-assistant</Overview>
   <Category>Productivity: Tools:</Category>
-  <WebUI>http://[IP]:[PORT:2024]</WebUI>
+  <WebUI>http://[IP]:[PORT:2025]/setup</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/ryan-haver/unraid-docker-templates/main/LangChain/executive-ai-assistant.xml</TemplateURL>
   <Icon>https://python.langchain.com/img/brand/wordmark.png</Icon>
   <ExtraParams>--restart=unless-stopped</ExtraParams>
@@ -225,9 +277,11 @@ For detailed documentation, visit: https://github.com/ryan-haver/executive-ai-as
   <!-- Required Configuration -->
   <Config Name="LangGraph API Port" Target="2024" Default="2024" Mode="tcp" Description="Port for LangGraph API and web interface" Type="Port" Display="always" Required="true" Mask="false">2024</Config>
   
-  <Config Name="Gmail Client Secret (Base64)" Target="GMAIL_SECRET" Default="" Mode="" Description="Base64-encoded client_secret.json from Google Cloud Console (REQUIRED - see Overview for setup instructions)" Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="Setup UI Port" Target="2025" Default="2025" Mode="tcp" Description="Port for OAuth Setup Web UI - Use this to configure Gmail credentials via web interface instead of manual setup" Type="Port" Display="always" Required="true" Mask="false">2025</Config>
   
-  <Config Name="Gmail OAuth Token (Base64)" Target="GMAIL_TOKEN" Default="" Mode="" Description="Base64-encoded token.json generated by setup_gmail.py script (REQUIRED - see Overview for setup instructions)" Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="Gmail Client Secret (Base64)" Target="GMAIL_SECRET" Default="" Mode="" Description="Base64-encoded client_secret.json from Google Cloud Console (OPTIONAL with Setup UI - can configure via web interface at port 2025)" Type="Variable" Display="always" Required="false" Mask="true"/>
+  
+  <Config Name="Gmail OAuth Token (Base64)" Target="GMAIL_TOKEN" Default="" Mode="" Description="Base64-encoded token.json generated by setup_gmail.py script (OPTIONAL with Setup UI - can configure via web interface at port 2025)" Type="Variable" Display="always" Required="false" Mask="true"/>
   
   <!-- LLM Provider Configuration -->
   <Config Name="LLM Provider" Target="LLM_PROVIDER" Default="auto" Mode="" Description="Choose your AI model provider: 'ollama' (free, local), 'openai' (cloud, paid), 'anthropic' (cloud, paid), 'hybrid' (ollama + cloud fallback), 'auto' (detect available)" Type="Variable" Display="always" Required="true" Mask="false">auto</Config>
