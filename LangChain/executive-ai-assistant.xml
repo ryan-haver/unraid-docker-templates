@@ -309,6 +309,12 @@ For detailed documentation, visit: https://github.com/ryan-haver/executive-ai-as
   <!-- Optional Advanced Configuration -->
   <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Container timezone (affects cron schedule). Examples: America/New_York, America/Chicago, America/Los_Angeles, Europe/London, UTC" Type="Variable" Display="advanced" Required="false" Mask="false">America/New_York</Config>
   
+  <!-- Reverse Proxy Configuration -->
+  <Config Name="Setup UI Base URL" Target="SETUP_UI_BASE_URL" Default="" Mode="" Description="REVERSE PROXY ONLY: Public URL for OAuth callbacks when behind reverse proxy. Example: https://assistant.example.com. Leave empty for direct access (automatically detected). Required if proxy doesn't forward X-Forwarded-* headers correctly." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  
+  <Config Name="CORS Allowed Origins" Target="CORS_ALLOWED_ORIGINS" Default="*" Mode="" Description="REVERSE PROXY ONLY: Comma-separated list of allowed origins for CORS. Default: * (all origins). Example: https://assistant.example.com,https://app.example.com. Use '*' for development only." Type="Variable" Display="advanced" Required="false" Mask="false">*</Config>
+  
+  <!-- Monitoring & Debugging -->
   <Config Name="LangSmith API Key" Target="LANGSMITH_API_KEY" Default="" Mode="" Description="Optional: LangSmith API key for tracing and debugging. Get from: https://smith.langchain.com/settings. Leave empty to disable." Type="Variable" Display="advanced" Required="false" Mask="true"/>
   
   <Config Name="LangSmith Tracing" Target="LANGCHAIN_TRACING_V2" Default="false" Mode="" Description="Enable LangSmith tracing (requires LangSmith API Key). Set to 'true' to enable, 'false' to disable." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
