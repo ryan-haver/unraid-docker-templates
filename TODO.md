@@ -1,9 +1,41 @@
 # Unraid Docker Templates - Development TODO & Roadmap
 
 **Project:** Multi-Service Unraid Template Repository  
-**Last Updated:** October 30, 2025  
-**Current Focus:** Executive AI Assistant & Agent Inbox Deployment  
-**Status:** 🟢 Active Development - Phase 1 Complete, Preparing for Production Release
+**Last Updated:** October 31, 2025  
+**Current Focus:** 🔴 **CRITICAL: Authentication Implementation Required**  
+**Status:** 🔴 Security Alert - Both UIs Unprotected
+
+---
+
+## 🚨 CRITICAL SECURITY ALERT
+
+> **⚠️ Comprehensive Security Review Completed (October 30, 2025)**  
+> **Document:** [AGENT-INBOX-STORAGE-AND-AUTH-ROADMAP.md](LangChain/AGENT-INBOX-STORAGE-AND-AUTH-ROADMAP.md) (573 lines)
+>
+> **🔴 CRITICAL FINDINGS**:
+> - ❌ **NO AUTHENTICATION** on any UI (ports 2024, 2025, 3000)
+> - ❌ **OAuth tokens accessible** to anyone on network (`/app/secrets`)
+> - ❌ **LangSmith API keys exposed** without password protection
+> - ❌ **Full email access** - anyone can read/send as authenticated user
+> - ❌ **No audit logging** - cannot track who accessed what
+>
+> **� CRITICAL UX PROBLEMS** (Discovered during testing):
+> - ❌ **Draft responses lost** on page reload - users lose typed work
+> - ❌ **Filter selection resets** every page load - annoying reconfiguration
+> - ❌ **Inbox order not customizable** - cannot organize multiple inboxes
+> - ❌ **Scroll position lost** between sessions - poor UX
+>
+> **📋 IMPLEMENTATION PRIORITY**:
+> 1. **Phase 4A** (3-5 days) - Fix UX issues FIRST - users losing work is unacceptable
+> 2. **Phase 4B** (2-3 weeks) - Add authentication - security critical but no data loss
+> 3. **Phase 5** (2-3 weeks) - Enhanced features - polish and power user tools
+> 4. **Phase 6** (4-5 weeks) - Multi-user RBAC - for team/enterprise use
+>
+> **🎯 RATIONALE FOR PRIORITY**:
+> - UX fixes prevent **permanent data loss** (typed drafts)
+> - Authentication prevents **unauthorized access** (serious but no data loss from app itself)
+> - Both are critical, but losing user work is more immediate/frustrating
+> - UX fixes take days, auth takes weeks - quick wins first
 
 ---
 
@@ -13,8 +45,8 @@
 
 | Project | Status | Completion | Next Milestone |
 |---------|--------|------------|----------------|
-| **Executive AI Assistant** | 🟢 Phase 1 Complete | 85% | Production testing & Community Apps submission |
-| **Agent Inbox** | 🟢 Ready for Release | 90% | Final documentation & deployment |
+| **Agent Inbox** | � Auth Required | 90% | 🔴 **CRITICAL: Add Authentication** → Production release |
+| **Executive AI Assistant** | � Auth Required | 85% | 🔴 **CRITICAL: Add Authentication** → OAuth UI Phase 2 → Production testing |
 | **Reverse Proxy Support** | ✅ Complete | 100% | Testing in production environments |
 | **LAM + Samba AD** | ✅ Production Ready | 95% | Documentation improvements |
 | **Samba AD (Standalone)** | ✅ Stable | 100% | Maintenance mode |
@@ -22,14 +54,27 @@
 
 ### Current Sprint Goals (November 2025)
 
-**Week 1-2: Production Release Preparation**
-- Complete OAuth Web UI Phase 2 (UI/UX Polish)
+**Week 1: URGENT - Critical UX Fixes (Phase 4A)**
+- **🔴 PRIORITY 1**: Fix draft auto-save - Users losing typed responses
+- **🔴 PRIORITY 2**: Persist filter selection - Annoying to reselect every time
+- **� PRIORITY 3**: Inbox ordering, notification settings structure
+- Target: 3-5 days to complete all critical UX fixes
+- Must complete BEFORE authentication work begins
+
+**Week 2-3: CRITICAL SECURITY - Authentication (Phase 4B)**
+- Complete Authentication for both Agent Inbox and Executive AI Assistant
+  - Protect all UIs from unauthorized access (ports 2024, 2025, 3000)
+  - Basic password authentication with secure session management
+  - Update Unraid templates with auth configuration
+- Complete OAuth Web UI Phase 2 (UI/UX Polish) - with authentication enabled
+
+**Week 4: Production Preparation**
 - Final integration testing of all three services
 - Production deployment testing on Unraid
 - Community Apps submission preparation
 
-**Week 3-4: Documentation & Community Launch**
-- Video tutorials for installation and setup
+**Week 5-6: Documentation & Community Launch**
+- Video tutorials for installation and setup (including authentication setup)
 - Comprehensive troubleshooting guides
 - Community Apps submission
 - Forum announcements and support setup
@@ -38,12 +83,49 @@
 
 ## 🎯 High Priority Items (This Month)
 
+### 🔴 URGENT - Agent Inbox: Critical UX Fixes (Phase 4A) ⚡ COMPLETE FIRST
+
+**Priority**: 🔴 URGENT (Complete BEFORE authentication)  
+**Estimated Time**: 3-5 days  
+**Rationale**: These are show-stopper UX issues that lose user work and create frustration. Must fix before production release.
+
+**Critical Issues**:
+1. **Draft Auto-Save** 🔴 - Users lose typed responses on page reload
+2. **Filter Preference** 🔴 - Must reselect "All/Interrupted/etc" every page load
+3. **Inbox Ordering** 🟡 - Cannot customize inbox display order
+4. **Notification Settings** 🟡 - When implemented, needs persistence
+5. **Scroll Position** 🟡 - Lost between sessions (nice-to-have)
+
+**Implementation Plan**: See "Phase 4A: Critical UX & Storage Fixes" in Feature Roadmap below.
+
+---
+
+### 🔴 CRITICAL - Agent Inbox & Executive AI: Authentication (Phase 4B) ⚡ SECURITY
+
+**Priority**: 🔴 CRITICAL (Must complete BEFORE production release)  
+**Estimated Time**: 2-3 weeks  
+**Prerequisite**: Phase 4A (Critical UX fixes) complete  
+**Context**: See detailed roadmap in "Feature Roadmap" section below  
+
+**Current State**:
+- ❌ No authentication on ANY UI (ports 2024, 2025, 3000)
+- ❌ OAuth tokens accessible to anyone on network
+- ❌ LangSmith API keys exposed
+- ❌ Email access completely unprotected
+- ❌ No audit trail of who accessed what
+
+**Implementation**: See "🔴 CRITICAL - Agent Inbox & Executive AI: Authentication (Phase 4B)" section below for detailed week-by-week plan.
+
+---
+
 ### 1. Executive AI Assistant - OAuth Web UI Completion ⚡ URGENT
 
 **Current State:** Phase 1 Complete (100%), Phase 2 Pending (0%)  
 **Branch:** `feature/multi-llm-support`  
 **Priority:** 🔴 CRITICAL  
 **Estimated Time:** 3-4 days
+
+**⚠️ NOTE**: Authentication (see Phase 4B below) should be completed BEFORE or ALONGSIDE this phase to protect the Setup UI. However, **Phase 4A (Critical UX fixes)** takes priority due to users losing work.
 
 #### Phase 2: UI/UX Polish (Days 6-8) - IN PROGRESS
 
@@ -94,7 +176,8 @@
 - Reduced support burden through better UX
 - <5 minute setup time achieved
 
-**Dependencies:** None (Phase 1 complete)
+**Dependencies:** None (Phase 1 complete)  
+**Security Note:** Should implement authentication (Phase 4) to protect Setup UI before production release
 
 ---
 
@@ -309,6 +392,276 @@
 
 ## 🚀 Feature Roadmap
 
+### 🔴 URGENT - Agent Inbox: Critical UX & Storage Fixes (Phase 4A)
+
+**Priority**: URGENT (3-5 days, COMPLETE FIRST)  
+**Context**: Show-stopper UX issues discovered during testing. Users lose work, must reconfigure preferences on every page load. Must fix BEFORE authentication to avoid rework.
+
+**Critical Problems**:
+1. **Draft responses lost on page reload** - User types response, refreshes page, work gone
+2. **Filter selection resets** - User selects "All", refreshes, back to "Interrupted"
+3. **Inbox order not customizable** - Users with many inboxes cannot organize them
+4. **Scroll position resets** - User scrolls down thread list, refreshes, back to top
+5. **No notification preferences** - When implemented, needs to persist
+
+#### Day 1-2: Draft Auto-Save (CRITICAL)
+- [ ] Add `drafts` to PersistentConfig interface
+  ```typescript
+  drafts?: {
+    [threadId: string]: {
+      content: string;
+      lastSaved: string;
+      threadStatus?: string; // For context
+    };
+  };
+  ```
+- [ ] Create `useDraftStorage` hook
+  - Auto-save every 5 seconds when user is typing
+  - Debounced save to avoid excessive writes
+  - Load draft on thread view mount
+- [ ] Add draft indicator to UI
+  - Show "Draft saved at HH:MM" below textarea
+  - "Discard Draft" button
+  - Warning before navigating away with unsaved draft
+- [ ] Sync drafts to server storage
+  - Add to localStorage AND server config
+  - Preserve across devices
+- [ ] Test scenarios:
+  - Type response, refresh page → Draft restored ✅
+  - Type response, switch threads → Draft saved ✅
+  - Type response, close browser → Draft persists ✅
+
+#### Day 2-3: Filter Preference Persistence
+- [ ] Add `lastSelectedFilter` to preferences object
+  ```typescript
+  preferences: {
+    theme?: string;
+    defaultInbox?: string;
+    lastSelectedFilter?: ThreadStatusWithAll; // NEW
+  }
+  ```
+- [ ] Update `index.tsx` to read from config
+  - Change: `useState("interrupted")` 
+  - To: `useState(config.preferences?.lastSelectedFilter || "interrupted")`
+- [ ] Save filter selection on change
+  - Call `updateConfig({ preferences: { ...preferences, lastSelectedFilter } })`
+  - Sync to server storage
+- [ ] Test: Select "All", refresh → Still on "All" ✅
+
+#### Day 3: Inbox Ordering
+- [ ] Add `inboxOrder` to preferences
+  ```typescript
+  preferences: {
+    ...existing,
+    inboxOrder?: string[]; // Array of inbox IDs in desired order
+  }
+  ```
+- [ ] Implement drag-and-drop in inbox sidebar
+  - Use react-beautiful-dnd or similar
+  - Reorder inboxes array on drop
+  - Save order to preferences
+- [ ] Apply ordering when rendering inbox list
+  - Sort config.inboxes by preferences.inboxOrder
+  - Fall back to creation order if no preference set
+
+#### Day 4: Notification Preferences (Prep for future)
+- [ ] Add notification structure to preferences
+  ```typescript
+  preferences: {
+    ...existing,
+    notifications?: {
+      enabled: boolean;
+      sound: boolean;
+      desktop: boolean;
+      emailOnInterrupt?: boolean; // Future
+    }
+  }
+  ```
+- [ ] Create settings UI section for notifications
+  - Toggle switches for each option
+  - Save to preferences on change
+  - Sync to server storage
+- [ ] Document in README for future implementation
+
+#### Day 5: Testing & Polish
+- [ ] Integration testing all new features
+  - Draft auto-save across page reloads
+  - Filter persistence across sessions
+  - Inbox ordering across devices
+  - All features work with server storage enabled
+  - All features work in browser-only mode
+- [ ] Update Unraid template documentation
+- [ ] Git commit and tag
+
+**Success Criteria**:
+- ✅ No user work lost on page reload
+- ✅ UI state persists across sessions
+- ✅ Multi-device sync works for all preferences
+- ✅ Backward compatible (works without server storage)
+- ✅ Performance: Auto-save doesn't lag typing
+- ✅ User testing confirms: "Much better UX!"
+
+**Deliverables**:
+- ✅ Draft auto-save fully functional
+- ✅ Filter preference persists
+- ✅ Inbox ordering customizable
+- ✅ Notification preferences structure ready
+- ✅ All tests passing
+- ✅ Documentation updated
+
+---
+
+### 🔴 CRITICAL - Agent Inbox & Executive AI: Authentication (Phase 4B)
+
+**Priority**: CRITICAL (2-3 weeks)  
+**Prerequisite**: Phase 4A (UX fixes) complete  
+**Context**: Both Agent Inbox (port 3000) and Executive AI Assistant (ports 2024/2025) currently have NO authentication. Anyone on network can access emails, OAuth tokens, and configuration.
+
+**Security Risks**:
+- Unauthorized email access (read/send as authenticated user)
+- LangSmith API key exposure
+- Gmail OAuth token theft
+- Configuration tampering
+- No audit trail
+
+**Note**: Authentication was originally Phase 4, but has been moved to Phase 4B to prioritize critical UX fixes in Phase 4A that lose user work.
+
+**Implementation: Basic Authentication**
+
+#### Week 1: Core Authentication
+- [ ] Design authentication schema for both services
+- [ ] Implement password hashing (bcrypt, salt rounds ≥ 12)
+- [ ] Create session management middleware (secure cookies)
+- [ ] Build login page UI
+- [ ] Add logout functionality
+- [ ] Environment variables:
+  ```bash
+  AUTH_ENABLED=true  # Default: false (backward compatible)
+  ADMIN_USERNAME=admin
+  ADMIN_PASSWORD_HASH=<bcrypt>
+  SESSION_SECRET=<random-secret>
+  SESSION_TIMEOUT=1800  # 30 minutes
+  ```
+
+#### Week 2: UI Integration
+- [ ] Protected route middleware for ALL UIs
+  - [ ] Agent Inbox (port 3000)
+  - [ ] Executive AI API (port 2024)
+  - [ ] Executive AI Setup UI (port 2025)
+- [ ] "Change Password" in settings
+- [ ] Session timeout (30 minutes idle)
+- [ ] "Remember Me" checkbox
+- [ ] Redirect to login on auth failure
+- [ ] Update Unraid templates with auth vars
+
+#### Week 3: Testing & Documentation
+- [ ] Security testing (session hijacking, CSRF, XSS)
+- [ ] Multi-browser and multi-device testing
+- [ ] Password reset flow
+- [ ] Brute force protection (max 5 attempts, 15 min lockout)
+- [ ] Update README with authentication guide
+- [ ] Create migration guide for existing users
+- [ ] Add troubleshooting section
+
+**Success Criteria**:
+- ✅ Both services password-protected
+- ✅ Secure session management
+- ✅ No security vulnerabilities in audit
+- ✅ Backward compatible (auth optional, off by default)
+- ✅ Documentation complete
+
+---
+
+### 🟡 MEDIUM - Agent Inbox: Enhanced Features (Phase 5)
+
+**Priority**: MEDIUM (2-3 weeks)  
+**Prerequisite**: Phase 4A (UX fixes) and Phase 4B (Authentication) complete
+
+**Context**: Core UX fixes completed in Phase 4A. This phase adds polish and advanced features.
+
+**Note**: Critical items (drafts, filters, inbox ordering) were moved to Phase 4A and completed first.
+
+#### Week 1-2: Advanced UI Features
+- [ ] Keyboard shortcuts
+  - [ ] Quick navigation (j/k for threads, etc)
+  - [ ] Command palette (Cmd+K)
+  - [ ] Global search
+- [ ] Bulk actions on threads
+  - [ ] Select multiple threads
+  - [ ] Bulk mark as read/unread
+  - [ ] Bulk archive
+- [ ] Advanced filtering
+  - [ ] Custom filter builder
+  - [ ] Save custom filters
+  - [ ] Quick filter buttons
+- [ ] Thread list enhancements
+  - [ ] Column sorting
+  - [ ] Resizable columns (with width persistence)
+  - [ ] Column visibility toggle
+- Estimated time: 2 weeks
+
+#### Week 3: Polish & Testing
+- [ ] Dark mode improvements
+- [ ] Mobile responsiveness testing
+- [ ] Performance optimization
+- [ ] Accessibility audit (WCAG 2.1)
+- [ ] User acceptance testing
+- [ ] Documentation updates
+- Estimated time: 1 week
+
+**Deliverables**:
+- ✅ Power user features (keyboard shortcuts, bulk actions)
+- ✅ Advanced filtering and search
+- ✅ Polished, professional UI
+- ✅ Excellent mobile experience
+
+---
+
+### 🟢 MEDIUM - Agent Inbox: Multi-User & RBAC (Phase 6)
+
+**Priority**: MEDIUM (4-5 weeks)  
+**Prerequisite**: Phase 5 complete
+
+**Context**: After basic auth (Phase 4B), add support for multiple users with role-based access control.
+
+#### Week 1-2: User Management Backend
+- [ ] Design user schema (id, username, passwordHash, role, assignedInboxes, apiKey)
+- [ ] Implement user CRUD operations
+- [ ] Add user authentication API
+- [ ] Add role-based middleware (admin, user, readonly)
+- [ ] Create user database (SQLite or JSON in `/app/data/users.db`)
+- Estimated time: 2 weeks
+
+#### Week 3: Admin UI
+- [ ] Create user management page
+- [ ] Add "Users" section to settings
+- [ ] User creation/edit/delete forms
+- [ ] Role assignment UI (Admin, User, Read-Only)
+- [ ] Inbox assignment per user
+- Estimated time: 1 week
+
+#### Week 4: Access Control
+- [ ] Implement role-based permissions
+- [ ] Restrict inbox access per user
+- [ ] Add admin-only features toggle
+- [ ] Per-user API keys for programmatic access
+- Estimated time: 1 week
+
+#### Week 5: Testing & Polish
+- [ ] Multi-user session testing
+- [ ] Permission boundary testing
+- [ ] Performance testing (concurrent users)
+- [ ] Documentation update
+- Estimated time: 1 week
+
+**Deliverables**:
+- ✅ Multi-user support
+- ✅ Role-based access control
+- ✅ Admin management UI
+- ✅ Per-user inbox assignments
+
+---
+
 ### Version 1.1.0 (December 2025) - Post-Launch Enhancements
 
 **Based on Community Feedback:**
@@ -356,11 +709,11 @@
   - [ ] Progressive Web App (PWA) support
   - Estimated time: 4 days
   
-- [ ] Notification system
-  - [ ] Browser notifications for new interrupts
+- [ ] Notification system (Note: Basic notifications in Phase 5)
+  - [ ] Enhanced notification rules
   - [ ] Email notifications (optional)
   - [ ] Slack/Discord webhooks
-  - [ ] Custom notification rules
+  - [ ] Custom notification templates
   - Estimated time: 3 days
 
 **General Improvements:**
@@ -371,7 +724,7 @@
   - [ ] Database query optimization
   - Estimated time: 1 week
   
-- [ ] Security enhancements
+- [ ] Security enhancements (Note: Basic auth in Phase 4)
   - [ ] Rate limiting on API endpoints
   - [ ] Enhanced OAuth token encryption
   - [ ] Security audit and fixes
@@ -446,25 +799,29 @@
   - Estimated time: 4 weeks
   
 **Team Collaboration:**
-- [ ] Multi-user support
-  - [ ] User roles and permissions
+- [ ] Multi-user support (Note: Basic multi-user in Phase 6)
+  - [ ] Advanced team features
   - [ ] Shared inboxes
   - [ ] Delegation workflows
   - [ ] Audit logging
   - Estimated time: 3 weeks
   
-**Advanced Security:**
+**Advanced Security (Phase 7):**
 - [ ] Enterprise security features
-  - [ ] SSO integration (SAML, OAuth)
+  - [ ] OAuth 2.0 integration (Google, Microsoft, GitHub)
+  - [ ] Two-factor authentication (TOTP)
   - [ ] Advanced access controls
   - [ ] Data encryption at rest
   - [ ] Compliance reporting
-  - Estimated time: 2 weeks
+  - [ ] Audit logging and session management
+  - [ ] IP whitelisting
+  - [ ] Advanced password policies
+  - Estimated time: 4 weeks
   
 **API & Integrations:**
 - [ ] Public API for third-party integrations
   - [ ] RESTful API design
-  - [ ] API documentation
+  - [ ] API documentation (OpenAPI/Swagger)
   - [ ] Webhooks
   - [ ] SDK development (Python, JavaScript)
   - Estimated time: 3 weeks
@@ -481,6 +838,57 @@
 ---
 
 ## 🔧 Technical Debt & Code Quality
+
+### 🔴 CRITICAL - Agent Inbox Bug Fixes
+
+**Status**: ✅ ALL BUGS FIXED (October 30, 2025)
+
+**Recently Fixed**:
+- ✅ **Bug #1**: Welcome dialog race condition (wait for `isLoading`)
+  - Issue: Dialog appeared even with pre-configured inboxes
+  - Fix: Check `isLoading` before evaluating `config.inboxes.length`
+  - Commit: [hash from git log]
+  
+- ✅ **Bug #2**: Inbox not visible in sidebar after creation
+  - Issue: useInboxes hook not integrated with persistent config
+  - Fix: Load from `config.inboxes` when `serverEnabled=true`
+  - Commit: [hash from git log]
+  
+- ✅ **Bug #3**: Duplicate inbox creation (server creates two configs)
+  - Issue: Server and UI both creating config.json
+  - Fix: Server creates immediately, UI doesn't merge
+  - Commit: 2f2ab20
+  
+- ✅ **Bug #4**: Add inbox via UI not persisting
+  - Issue: `updateConfig()` has 1-second debounced save, page reloaded too early
+  - Fix: Direct `fetch('/api/config')` with await before reload
+  - Commit: 84c0fd6
+  - Container: agent-inbox:add-inbox-fix-v2
+  - User Validation: "i was able to add an inbox...or two :)" ✅
+
+**Persistent Storage Implementation**: ✅ COMPLETE
+- Phase 1: Backend Infrastructure (API, file storage, Docker volume)
+- Phase 2: UI Integration (React hooks, sync, fallback)
+- Phase 3: Zero-Touch Deployment (pre-configuration via env vars)
+- **Documentation**: See [AGENT-INBOX-STORAGE-AND-AUTH-ROADMAP.md](LangChain/AGENT-INBOX-STORAGE-AND-AUTH-ROADMAP.md) for complete feature matrix and technical architecture
+
+**What Works Now**:
+- ✅ Multi-device/multi-browser configuration sync
+- ✅ Server-side storage at `/app/data/config.json`
+- ✅ Pre-configuration via environment variables
+- ✅ Backward compatible (opt-in, default OFF)
+- ✅ Comprehensive Unraid template integration
+
+**What's Missing** (see roadmap document):
+- ❌ Draft auto-save (Phase 4A - URGENT) 🔴
+- ❌ Filter preferences (Phase 4A - URGENT) 🔴
+- ❌ Inbox ordering (Phase 4A - URGENT) 🟡
+- ❌ Notification settings (Phase 4A) 🟡
+- ❌ Authentication (Phase 4B - CRITICAL) 🔴
+- ❌ Multi-user support (Phase 6 - MEDIUM)
+- ❌ Advanced security (Phase 7 - FUTURE)
+
+---
 
 ### High Priority Technical Improvements
 
@@ -1205,6 +1613,7 @@
 | [OAUTH-WEB-UI-PROGRESS.md](LangChain/OAUTH-WEB-UI-PROGRESS.md) | OAuth Web UI implementation tracking |
 | [REVERSE-PROXY-SETUP.md](LangChain/REVERSE-PROXY-SETUP.md) | Reverse proxy configuration guide |
 | [UNRAID-TESTING-GUIDE.md](LangChain/UNRAID-TESTING-GUIDE.md) | Testing procedures |
+| [**AGENT-INBOX-STORAGE-AND-AUTH-ROADMAP.md**](LangChain/AGENT-INBOX-STORAGE-AND-AUTH-ROADMAP.md) | 🔴 **CRITICAL**: 573-line comprehensive security & storage roadmap |
 | [LAM_Samba-AD/TODO.md](LAM_Samba-AD/TODO.md) | LAM project TODO list |
 
 **Repository:** https://github.com/ryan-haver/unraid-docker-templates
