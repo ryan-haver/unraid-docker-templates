@@ -20,15 +20,26 @@ The Agent Inbox provides a beautiful, intuitive UI for managing human-in-the-loo
 - 💬 Respond to agent questions and interrupts
 - 🔄 Real-time updates from LangGraph deployments
 - 🎯 Multiple inbox support (manage different agents)
-- 🌐 Stateless design (no data storage, all config in browser)
+- 🌐 Flexible storage: Browser-only (default) or optional server-side sync
 - 🔒 Secure browser-based configuration
+- 💾 Optional persistent storage for multi-device sync (NEW!)
 
-**STATELESS &amp; SECURE:**
+**STORAGE OPTIONS:**
+
+**Option 1: Browser-Only (Default - Stateless)**
 - No volumes required - completely stateless
 - All configuration stored in browser local storage
 - No server-side secrets or API keys
 - Each user/browser configures independently
 - Clear browser data = reset configuration
+
+**Option 2: Server-Side Storage (Optional - NEW!)**
+- Enable with USE_SERVER_STORAGE=true
+- Requires volume mapping to /app/data
+- Configuration syncs between browsers/devices
+- Survives browser cache/cookie clear
+- Backup and restore capabilities via API
+- Backward compatible (can switch back to browser-only anytime)
 
 **PERFECT FOR:**
 - Executive AI Assistant email management
@@ -99,7 +110,52 @@ After opening the web UI:
 
 **CONFIGURATION NOTES:**
 
-**⚠️ CRITICAL - Browser Data Warning:**
+**💾 PERSISTENT STORAGE (Optional Feature):**
+
+By default, Agent Inbox is stateless and stores all configuration in your browser's localStorage. This works great for single-device use, but has limitations:
+- Configuration lost if you clear browser cache/cookies
+- Can't access same configuration from different devices/browsers
+- No built-in backup/restore capability
+
+**Enable Server-Side Storage:**
+
+To enable optional persistent storage:
+
+1. **Configure Volume Mapping:**
+   - Set "Config Storage Path" to: `/mnt/user/appdata/agent-inbox`
+   - This creates a folder on your Unraid server to store config.json
+
+2. **Enable Server Storage:**
+   - Set "Enable Server Storage" to: `true`
+   - This activates the server-side sync feature
+
+3. **Benefits:**
+   - ✅ Access same configuration from any browser/device
+   - ✅ Configuration survives browser cache clear
+   - ✅ Automatic sync every 30 seconds
+   - ✅ Backup/restore via API
+   - ✅ Pre-configure inboxes via environment variables
+   - ✅ Can still work offline (falls back to browser localStorage)
+
+4. **Backward Compatible:**
+   - Existing browser configuration automatically syncs to server on first load
+   - Can disable server storage anytime and revert to browser-only mode
+   - No breaking changes - container works with or without volumes
+
+**When to Use Server Storage:**
+- ✅ Multiple devices (access inbox from phone, tablet, laptop)
+- ✅ Shared configuration (team members use same inboxes)
+- ✅ Protection against browser data loss
+- ✅ Backup and disaster recovery
+- ✅ Pre-configuration for new users
+
+**When to Keep Browser-Only:**
+- ✅ Single device usage
+- ✅ Privacy concerns (no server-side data)
+- ✅ Minimal setup (no volumes to manage)
+- ✅ Temporary/testing deployments
+
+**⚠️ CRITICAL - Browser Data Warning (Browser-Only Mode):**
 - **DO NOT clear browser cache/cookies** for the Agent Inbox domain
 - Clearing browser data will **DELETE ALL your configuration**
 - This includes: LangSmith key, inbox settings, deployment URLs
@@ -308,6 +364,38 @@ For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</
   <Config Name="LangGraph API URL (Optional)" Target="NEXT_PUBLIC_LANGGRAPH_API_URL" Default="" Mode="" Description="OPTIONAL: Pre-configure LangGraph API URL. Example: https://api.example.com or http://executive-ai-assistant:2024. Leave empty to configure manually in browser UI (recommended). Note: This is a build-time variable, container rebuild required for changes." Type="Variable" Display="advanced" Required="false" Mask="false"/>
   
   <Config Name="Base Path (Subpath Only)" Target="NEXT_PUBLIC_BASE_PATH" Default="" Mode="" Description="REVERSE PROXY ONLY: Base path for subpath deployments. Example: /inbox for https://example.com/inbox/. Leave empty for root domain deployment like https://inbox.example.com/ (recommended). Note: Requires container rebuild to change." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  
+  <!-- ========================================================================= -->
+  <!-- PERSISTENT STORAGE CONFIGURATION (Optional Feature)                      -->
+  <!-- ========================================================================= -->
+  <!-- Enable optional server-side configuration storage for multi-device sync   -->
+  <!-- and backup/restore capabilities. By default, Agent Inbox uses browser     -->
+  <!-- localStorage only (stateless). Enabling this feature allows:              -->
+  <!--   - Configuration sync across multiple devices/browsers                   -->
+  <!--   - Survives browser cache/cookie clear                                   -->
+  <!--   - Backup and restore via API                                            -->
+  <!--   - Pre-configuration via environment variables                           -->
+  <!-- ========================================================================= -->
+  
+  <Config Name="Enable Server Storage" Target="USE_SERVER_STORAGE" Default="false" Mode="" Description="OPTIONAL: Enable server-side configuration storage. When enabled, configuration syncs between browser and server, allowing multi-device access and protection against browser data loss. Requires 'Config Storage Path' volume to be configured below. Default: false (browser localStorage only)." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  
+  <Config Name="Config File Path" Target="CONFIG_FILE_PATH" Default="/app/data/config.json" Mode="" Description="ADVANCED: Custom path for configuration file. Only used when 'Enable Server Storage' is true. Default: /app/data/config.json" Type="Variable" Display="advanced-hide" Required="false" Mask="false">/app/data/config.json</Config>
+  
+  <!-- Pre-configuration via Environment Variables (Optional) -->
+  <Config Name="Pre-configure Default Inbox" Target="DEFAULT_INBOX_ENABLED" Default="false" Mode="" Description="ADVANCED: Auto-create a default inbox from environment variables on first run. Requires setting DEFAULT_INBOX_NAME, DEFAULT_DEPLOYMENT_URL, and DEFAULT_ASSISTANT_ID below. Only works when server storage is enabled. Default: false" Type="Variable" Display="advanced-hide" Required="false" Mask="false">false</Config>
+  
+  <Config Name="Default Inbox Name" Target="DEFAULT_INBOX_NAME" Default="Default Inbox" Mode="" Description="ADVANCED: Name for auto-created default inbox. Only used when 'Pre-configure Default Inbox' is true." Type="Variable" Display="advanced-hide" Required="false" Mask="false">Default Inbox</Config>
+  
+  <Config Name="Default Deployment URL" Target="DEFAULT_DEPLOYMENT_URL" Default="" Mode="" Description="ADVANCED: Deployment URL for auto-created default inbox. Example: http://executive-ai-assistant:2024. Only used when 'Pre-configure Default Inbox' is true." Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
+  
+  <Config Name="Default Assistant ID" Target="DEFAULT_ASSISTANT_ID" Default="email_assistant" Mode="" Description="ADVANCED: Assistant/Graph ID for auto-created default inbox. Usually 'email_assistant' for Executive AI Assistant. Only used when 'Pre-configure Default Inbox' is true." Type="Variable" Display="advanced-hide" Required="false" Mask="false">email_assistant</Config>
+  
+  <Config Name="Additional Inboxes (JSON)" Target="ADDITIONAL_INBOXES" Default="" Mode="" Description="ADVANCED: Additional inboxes to pre-configure as JSON array. Example: [{'id':'inbox2','name':'Second Inbox','deploymentUrl':'http://other:2024','assistantId':'agent'}]. Only used when server storage is enabled." Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
+  
+  <Config Name="Pre-configure LangSmith API Key" Target="LANGSMITH_API_KEY" Default="" Mode="" Description="ADVANCED: Pre-configure LangSmith API key via environment variable. Get your key from https://smith.langchain.com/settings. Only used when server storage is enabled. Recommended to configure in browser UI instead for better security." Type="Variable" Display="advanced-hide" Required="false" Mask="true"/>
+  
+  <!-- Persistent Storage Volume (Optional) -->
+  <Config Name="Config Storage Path" Target="/app/data" Default="" Mode="rw" Description="OPTIONAL: Host path for persistent configuration storage. Example: /mnt/user/appdata/agent-inbox. Leave empty to use browser localStorage only (default stateless mode). Required when 'Enable Server Storage' is true. Configuration will be stored in config.json in this directory." Type="Path" Display="advanced" Required="false" Mask="false"/>
   
   <!-- Note: Configuration done in browser UI, not via environment variables -->
 </Container>
