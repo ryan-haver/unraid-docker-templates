@@ -194,7 +194,13 @@ interface User {
 
 ### 🔴 PHASE 4: BASIC AUTHENTICATION (CRITICAL - 2-3 weeks)
 
-**Goal**: Protect both Agent Inbox and Executive AI Assistant with password authentication
+**Goal**: Protect **ALL UIs** (Agent Inbox AND Executive AI Assistant) with password authentication
+
+**Scope**:
+- ✅ Agent Inbox UI (port 3000)
+- ✅ Executive AI Assistant API (port 2024) 
+- ✅ Executive AI Assistant Setup UI (port 2025)
+- ✅ All admin/management endpoints
 
 #### Week 1: Core Authentication
 - [ ] Design authentication schema
