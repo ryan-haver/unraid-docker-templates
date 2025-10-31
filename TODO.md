@@ -83,18 +83,25 @@
 
 ## 🎯 High Priority Items (This Month)
 
-### 🔴 URGENT - Agent Inbox: Critical UX Fixes (Phase 4A) ⚡ COMPLETE FIRST
+### 🔴 URGENT - Agent Inbox: Critical UX Fixes (Phase 4A) ⚡ 50% COMPLETE
 
 **Priority**: 🔴 URGENT (Complete BEFORE authentication)  
-**Estimated Time**: 3-5 days  
+**Estimated Time**: 3-5 days (2.5 days used, 2-3 days remaining)  
 **Rationale**: These are show-stopper UX issues that lose user work and create frustration. Must fix before production release.
 
 **Critical Issues**:
-1. **Draft Auto-Save** 🔴 - Users lose typed responses on page reload
-2. **Filter Preference** 🔴 - Must reselect "All/Interrupted/etc" every page load
-3. **Inbox Ordering** 🟡 - Cannot customize inbox display order
-4. **Notification Settings** 🟡 - When implemented, needs persistence
-5. **Scroll Position** 🟡 - Lost between sessions (nice-to-have)
+1. ✅ **Draft Auto-Save** 🔴 - COMPLETE (Oct 31, 2025) - All 5 tests passed
+2. ✅ **Filter Preference** 🔴 - COMPLETE (Oct 31, 2025) - All 7 tests passed
+3. ⏳ **Inbox Ordering** 🟡 - IN PROGRESS (Next task) - ~1 day remaining
+4. ⏳ **Notification Settings** 🟡 - Pending - ~0.5 day
+5. 🔵 **Scroll Position** 🟡 - Optional (nice-to-have) - Deferred to Phase 5
+
+**Progress Summary**:
+- ✅ Day 1-2: Draft Auto-Save (COMPLETE - 2.5 hours)
+- ✅ Day 2-3: Filter Persistence (COMPLETE - 1.5 hours)
+- ⏳ Day 3: Inbox Ordering (Next)
+- ⏳ Day 4: Notification Settings
+- ⏳ Day 5: Testing & Polish
 
 **Implementation Plan**: See "Phase 4A: Critical UX & Storage Fixes" in Feature Roadmap below.
 
@@ -431,22 +438,78 @@
   - Type response, switch threads → Draft saved ✅
   - Type response, close browser → Draft persists ✅
 
-#### Day 2-3: Filter Preference Persistence
-- [ ] Add `lastSelectedFilter` to preferences object
+#### Day 2-3: Filter Preference Persistence ✅ **COMPLETE** (Oct 31, 2025)
+- [x] Add `lastSelectedFilter` to preferences object
   ```typescript
   preferences: {
     theme?: string;
     defaultInbox?: string;
-    lastSelectedFilter?: ThreadStatusWithAll; // NEW
+    lastSelectedFilter?: string; // ✅ DONE - Phase 4A
   }
   ```
-- [ ] Update `index.tsx` to read from config
+- [x] Update `index.tsx` to read from config
   - Change: `useState("interrupted")` 
   - To: `useState(config.preferences?.lastSelectedFilter || "interrupted")`
-- [ ] Save filter selection on change
+  - ✅ **IMPLEMENTED**
+- [x] Save filter selection on change
   - Call `updateConfig({ preferences: { ...preferences, lastSelectedFilter } })`
   - Sync to server storage
-- [ ] Test: Select "All", refresh → Still on "All" ✅
+  - ✅ **IMPLEMENTED** in `inbox-view.tsx`
+- [x] Test: Select "All", refresh → Still on "All" ✅
+  - ✅ **TESTED & PASSING** (all 7 tests passed)
+- [x] **Bug Fix**: Fixed `useInboxes` hook overriding URL parameters
+  - ✅ Modified `use-inboxes.tsx` to respect existing `inbox` param
+- **Documentation**: See `PHASE-4A-FILTER-PERSISTENCE-IMPLEMENTATION.md` for complete details
+- **Time Invested**: ~1.5 hours (development + testing + bug fix)
+- **Status**: ✅ **Production Ready**
+
+#### Day 1-2: Draft Auto-Save ✅ **COMPLETE** (Oct 31, 2025)
+- [x] Add `drafts` to PersistentConfig interface
+  ```typescript
+  drafts?: {
+    [threadId: string]: {
+      content: string;
+      lastSaved: string;
+    };
+  };
+  ```
+- [x] Create `useDraftStorage` hook (155 lines)
+  - [x] Auto-save with 5-second debounce
+  - [x] Per-thread draft storage (Map of timeouts)
+  - [x] Load/save/discard/hasDraft/getLastSaved functions
+  - [x] Cleanup on unmount (prevent memory leaks)
+  - ✅ **IMPLEMENTED**
+- [x] Integrate into `inbox-item-input.tsx`
+  - [x] Add threadId prop to InboxItemInputProps
+  - [x] Load draft on mount (if response empty)
+  - [x] Save draft on change (debounced)
+  - [x] Discard draft on reset
+  - [x] Discard draft after successful submission
+  - [x] Show "Draft saved at HH:MM:SS" indicator
+  - ✅ **IMPLEMENTED**
+- [x] Update parent component (`thread-actions-view.tsx`)
+  - [x] Pass threadId to InboxItemInput
+  - ✅ **IMPLEMENTED**
+- [x] Fix localStorage persistence bug
+  - [x] Add `DRAFTS` storage key
+  - [x] Update `loadFromLocalStorage()` to load drafts
+  - [x] Update `saveToLocalStorage()` to save drafts
+  - ✅ **BUG FIXED**
+- [x] Fix SSR (Server-Side Rendering) bug
+  - [x] Add `typeof window === 'undefined'` checks
+  - [x] Prevent localStorage access during SSR
+  - ✅ **BUG FIXED**
+- [x] **Comprehensive Testing** (5/5 tests passed)
+  - [x] Test 1: Basic Auto-Save (5-second debounce) ✅
+  - [x] Test 2: Page Refresh Persistence ✅
+  - [x] Test 3: Thread Switching (per-thread drafts) ✅
+  - [x] Test 4: Reset Button (discard draft) ✅
+  - [x] Test 5: Submit (draft cleanup) ✅
+- **Test Page**: Created `/test-drafts` mock testing page
+- **Documentation**: See `PHASE-4A-DRAFT-AUTOSAVE-IMPLEMENTATION.md` for complete details
+- **Time Invested**: ~2.5 hours (implementation + bug fixes + testing)
+- **Status**: ✅ **Production Ready** 🎉
+- **Next**: Inbox Ordering (Phase 4A Feature #3)
 
 #### Day 3: Inbox Ordering
 - [ ] Add `inboxOrder` to preferences
@@ -881,12 +944,79 @@
 
 **What's Missing** (see roadmap document):
 - ❌ Draft auto-save (Phase 4A - URGENT) 🔴
-- ❌ Filter preferences (Phase 4A - URGENT) 🔴
+- ✅ **Filter preferences (Phase 4A - COMPLETE)** 🎉
 - ❌ Inbox ordering (Phase 4A - URGENT) 🟡
 - ❌ Notification settings (Phase 4A) 🟡
 - ❌ Authentication (Phase 4B - CRITICAL) 🔴
 - ❌ Multi-user support (Phase 6 - MEDIUM)
 - ❌ Advanced security (Phase 7 - FUTURE)
+
+---
+
+### 🔴 CRITICAL - Dependency Modernization & Security
+
+**Priority**: 🔴 HIGH (Security & Future-Proofing)  
+**Estimated Time**: 1-2 days  
+**Status**: ❌ NOT STARTED
+
+**Current Issues**:
+- ❌ Agent Inbox using React 18 with React 16/17 dependencies (peer dependency conflicts)
+- ❌ `react-json-view@1.21.3` incompatible with React 18
+- ❌ Multiple deprecated packages (13 vulnerabilities: 3 low, 8 moderate, 1 high, 1 critical)
+- ❌ `eslint@8.57.1` is EOL (no longer supported)
+- ❌ Node.js type definitions missing (`NodeJS.Timeout` errors)
+- ❌ Using `--legacy-peer-deps` workaround (not ideal for production)
+
+**Required Actions**:
+- [ ] **Audit all dependencies** (1 day)
+  - [ ] Run `npm audit` and review all vulnerabilities
+  - [ ] Run `npm outdated` to see available updates
+  - [ ] Identify breaking changes in major version updates
+  - [ ] Create upgrade plan with testing strategy
+  
+- [ ] **Upgrade critical dependencies** (1 day)
+  - [ ] Replace `react-json-view` with React 18 compatible alternative
+    - Options: `@uiw/react-json-view`, `react-json-view-lite`, or custom component
+  - [ ] Upgrade ESLint to v9.x (latest stable)
+  - [ ] Add `@types/node` for proper TypeScript Node.js types
+  - [ ] Update Next.js to latest 14.x or 15.x stable
+  - [ ] Update all security-vulnerable packages
+  
+- [ ] **Remove `--legacy-peer-deps` requirement** (2 hours)
+  - [ ] Fix all peer dependency conflicts
+  - [ ] Ensure clean `npm install` works
+  - [ ] Update documentation/README with correct install commands
+  
+- [ ] **Implement automated dependency monitoring** (2 hours)
+  - [ ] Enable Dependabot in GitHub (automated PRs for updates)
+  - [ ] Add `npm audit` to CI/CD pipeline
+  - [ ] Set up security alerts for critical vulnerabilities
+  - [ ] Schedule monthly dependency review
+
+**Benefits**:
+- ✅ Enhanced security (fixes known vulnerabilities)
+- ✅ Better TypeScript support (proper type definitions)
+- ✅ Future compatibility (modern React ecosystem)
+- ✅ Easier maintenance (no workarounds needed)
+- ✅ Faster development (no peer dependency warnings)
+
+**Testing Strategy**:
+- [ ] Run full test suite after each major upgrade
+- [ ] Test in Docker container (production environment)
+- [ ] Test in development mode (npm run dev)
+- [ ] Verify all Phase 4A features still work
+- [ ] Check bundle size (ensure no bloat)
+
+**Related Issues**:
+- See: GitHub Actions warnings (digest context access)
+- See: TypeScript errors (`Cannot find namespace 'NodeJS'`)
+- See: npm install requiring `--legacy-peer-deps` flag
+
+**Documentation Updates Needed**:
+- [ ] Update README.md with clean install instructions
+- [ ] Add DEPENDENCIES.md explaining version requirements
+- [ ] Update Dockerfile with latest Node.js LTS version
+- [ ] Document any breaking changes for contributors
 
 ---
 
