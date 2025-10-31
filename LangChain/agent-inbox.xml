@@ -304,5 +304,10 @@ For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</
   
   <Config Name="Disable Telemetry" Target="NEXT_TELEMETRY_DISABLED" Default="1" Mode="" Description="Disable Next.js telemetry (1=disabled, 0=enabled)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   
+  <!-- Reverse Proxy Configuration -->
+  <Config Name="LangGraph API URL (Optional)" Target="NEXT_PUBLIC_LANGGRAPH_API_URL" Default="" Mode="" Description="OPTIONAL: Pre-configure LangGraph API URL. Example: https://api.example.com or http://executive-ai-assistant:2024. Leave empty to configure manually in browser UI (recommended). Note: This is a build-time variable, container rebuild required for changes." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  
+  <Config Name="Base Path (Subpath Only)" Target="NEXT_PUBLIC_BASE_PATH" Default="" Mode="" Description="REVERSE PROXY ONLY: Base path for subpath deployments. Example: /inbox for https://example.com/inbox/. Leave empty for root domain deployment like https://inbox.example.com/ (recommended). Note: Requires container rebuild to change." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  
   <!-- Note: Configuration done in browser UI, not via environment variables -->
 </Container>
