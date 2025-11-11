@@ -137,8 +137,6 @@ Configuration not saving:
   
   <Config Name="Enable Server Storage" Target="USE_SERVER_STORAGE" Default="false" Mode="" Description="Enable server-side configuration sync. When true, configuration syncs between browser and /app/data/config.json, allowing multi-device access and surviving browser cache clears. Requires 'Config Storage Path' volume below. Example: true for multi-device, false for browser-only. Default: false" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   
-  <Config Name="Config File Path (Advanced)" Target="CONFIG_FILE_PATH" Default="/app/data/config.json" Mode="" Description="ADVANCED: Custom location for config file inside container. Only change if using custom volume mount points. Must be writable path inside container. Default: /app/data/config.json (maps to your 'Config Storage Path' volume)" Type="Variable" Display="advanced-hide" Required="false" Mask="false">/app/data/config.json</Config>
-  
   <!-- Pre-configuration via Environment Variables (Optional) -->
   <Config Name="Auto-Create Default Inbox" Target="DEFAULT_INBOX_ENABLED" Default="false" Mode="" Description="ADVANCED: Automatically create pre-configured inbox on first launch. Useful for deployment automation or shared setups. Requires DEFAULT_INBOX_NAME, DEFAULT_DEPLOYMENT_URL, and DEFAULT_ASSISTANT_ID below. Only works when server storage enabled. Example: true. Default: false" Type="Variable" Display="advanced-hide" Required="false" Mask="false">false</Config>
   
