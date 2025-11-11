@@ -145,7 +145,7 @@ Configuration not saving:
   <Config Name="Pre-Configure LangSmith Key" Target="LANGSMITH_API_KEY" Default="" Mode="" Description="ADVANCED: Pre-populate LangSmith API key via environment variable. Get from https://smith.langchain.com/settings (starts with lsv2_pt_). Only used when server storage enabled. WARNING: Less secure than browser UI entry - use for automation only. Default: (empty, configure in UI)" Type="Variable" Display="advanced-hide" Required="false" Mask="true"/>
   
   <!-- Persistent Storage Volume (Optional) -->
-  <Config Name="Config Storage Path (Optional)" Target="/app/data" Default="/mnt/user/appdata/agent-inbox" Mode="rw" Description="OPTIONAL: Host directory for persistent config.json storage. Example: /mnt/user/appdata/agent-inbox. Leave EMPTY for browser-only mode (default, stateless). Required when 'Enable Server Storage' is true. Config syncs here for backup/multi-device access." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/agent-inbox</Config>
+  <Config Name="Config Storage Path (Optional)" Target="/app/data" Default="/mnt/user/appdata/agent-inbox" Mode="rw" Description="OPTIONAL: Host directory for persistent config.json storage. Default: /mnt/user/appdata/agent-inbox (standard Unraid location). Clear this field for browser-only mode (stateless). Config syncs here for backup/multi-device access when 'Enable Server Storage' is true." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/agent-inbox</Config>
   
-  <!-- Note: Configuration done in browser UI, not via environment variables -->
+  <!-- Note: All configuration is done in browser UI. Storage path pre-populated for convenience. -->
 </Container>
