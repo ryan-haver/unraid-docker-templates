@@ -116,6 +116,10 @@ Configuration not saving:
   <!-- Port Configuration -->
   <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for accessing the web interface. Example: 3006 to access at http://YOUR_IP:3006. Container internal port is always 3000, but you can map to any external port." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   
+  <!-- Display Variables for Container Logs -->
+  <Config Name="Server IP Address" Target="HOST_IP" Default="192.168.1.110" Mode="" Description="Your Unraid server's IP address. Used ONLY for displaying access URL in container logs. Example: 192.168.1.110. Does not affect functionality - just helps you copy the correct URL from logs." Type="Variable" Display="always" Required="false" Mask="false">192.168.1.110</Config>
+  <Config Name="Host Port (for logs)" Target="HOST_PORT" Default="3000" Mode="" Description="Enter the SAME port you configured in 'Web UI Port' above. Used ONLY for displaying complete access URL in container logs. Example: if Web UI Port is 3006, enter 3006 here. Does not affect functionality - just makes logs show correct URL." Type="Variable" Display="always" Required="false" Mask="false">3000</Config>
+  
   <!-- Reverse Proxy Configuration (Advanced) -->
   <Config Name="Base Path (Reverse Proxy)" Target="NEXT_PUBLIC_BASE_PATH" Default="" Mode="" Description="REVERSE PROXY ONLY: URL path prefix for subpath deployments. Example: /inbox serves UI at https://example.com/inbox/. Leave EMPTY for root domain (https://inbox.example.com/). WARNING: Requires container rebuild to change." Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
   
