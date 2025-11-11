@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>Executive-AI-Assistant</Name>
-  <Repository>ghcr.io/ryan-haver/executive-ai-assistant:latest</Repository>
+  <Repository>ghcr.io/ryan-haver/executive-ai-assistant:feature-multi-llm-support</Repository>
   <Registry>https://github.com/ryan-haver/executive-ai-assistant/pkgs/container/executive-ai-assistant</Registry>
   <Network>bridge</Network>
   <MyIP/>
@@ -32,159 +32,81 @@ This intelligent assistant monitors your Gmail inbox, triages emails, drafts pro
 
 **IMPORTANT - GMAIL OAUTH SETUP (REQUIRED):**
 
-This container REQUIRES Gmail OAuth credentials to function. You have TWO OPTIONS for setup:
+This container monitors your Gmail and drafts responses. It requires one-time OAuth setup:
 
-**🎯 OPTION 1: WEB-BASED SETUP (RECOMMENDED - EASIEST)**
+**� QUICK SETUP (5 MINUTES):**
 
-NEW! Use the built-in Setup UI for a streamlined 3-5 minute setup process:
+**Part 1: Google Cloud Console (One-time)**
+1. Visit https://console.cloud.google.com/
+2. Create new project: "Executive AI Assistant"
+3. Enable Gmail API (APIs &amp; Services → Enable APIs)
+4. Configure OAuth consent screen:
+   - User type: **External**
+   - App name: "Executive AI Assistant"
+   - Add your Gmail as test user
+5. Create credentials (APIs &amp; Services → Credentials):
+   - Type: **Desktop app**
+   - Name: "Executive AI Assistant"
+   - Download JSON as `client_secret.json`
 
-1. Start the container (it will run in degraded mode without credentials)
-2. Access the Setup UI at: **http://YOUR-SERVER-IP:2025/setup**
-3. Follow the on-screen instructions:
-   - Download your client_secret.json from Google Cloud Console (see steps below)
-   - Upload the file via drag-and-drop interface
-   - Click "Connect to Gmail" to authorize
-   - Complete OAuth flow in browser
-   - Done! Container automatically starts processing emails
+**Part 2: Container Setup (One-time)**
+1. Deploy this container with at least ONE LLM provider configured (see LLM SETUP below)
+2. From your PC, open PowerShell and run:
+   ```
+   ssh -L 2025:localhost:2025 root@YOUR-UNRAID-IP
+   ```
+   (Replace YOUR-UNRAID-IP with your server's IP like 192.168.1.110)
+3. Open http://localhost:2025/setup in your browser
+4. Upload `client_secret.json` 
+5. Click "Connect to Gmail" and authorize
+6. Done! Close PowerShell. Container now runs independently.
 
-The Setup UI handles all credential storage and validation automatically. No terminal commands required!
-
-**📋 OPTION 2: MANUAL SETUP (ADVANCED)**
-
-If you prefer manual setup or need to troubleshoot, follow the detailed steps below to generate and base64-encode your credentials.
+**⚠️ SSH tunnel is ONLY for initial setup** - the container runs on its own afterwards, checking email every 5 minutes automatically.
 
 ---
 
-**OAUTH PREREQUISITES (Required for Both Options):**
+**LLM SETUP (REQUIRED - Choose One):**
 
-Before using either setup method, you must create a Google Cloud Project and OAuth credentials:
+You must configure at least ONE AI provider:
 
-**Step 1: Create Google Cloud Project**
-1. Go to: https://console.cloud.google.com/
-2. Click the project selector dropdown in the **upper left** (shows current project name or "Select a project")
-3. Click "NEW PROJECT" button in the dialog
-4. Enter project name: "Executive AI Assistant"
-5. (Optional) Edit the project ID if desired
-6. Click "CREATE"
-7. Wait for project creation (notification appears in top-right)
-8. **Important**: Select your new project from the dropdown to activate it
+**Option A: Ollama (Free, Local)**
+- Deploy Ollama container from Community Apps
+- Run: `docker exec ollama ollama pull llama3.2:3b`
+- Set "Ollama Host" to: `http://YOUR-UNRAID-IP:11434`
+- Set "LLM Provider" to: `ollama` or `auto`
 
-**Step 2: Enable Gmail API**
-1. In your project, go to "APIs &amp; Services" → "Enabled APIs &amp; services"
-2. Click "+ ENABLE APIS AND SERVICES" (blue button at top)
-3. Search for "Gmail API"
-4. Click on "Gmail API" in results
-5. Click "ENABLE" button
-6. Wait for activation (30-60 seconds)
+**Option B: OpenAI (Cloud, Paid)**
+- Get API key: https://platform.openai.com/api-keys
+- Paste in "OpenAI API Key" field
+- Set "LLM Provider" to: `openai` or `auto`
 
-**Step 3: Configure OAuth Consent Screen**
-1. Go to "APIs &amp; Services" → "OAuth consent screen"
-2. Choose "User type":
-   - **External** (for personal Gmail accounts - most users)
-   - **Internal** (only for Google Workspace organizations)
-3. Click "CREATE"
-4. Fill in required app information:
-   - App name: "Executive AI Assistant"
-   - User support email: Your email address
-   - (Optional) App logo, privacy policy, terms of service
-5. Click "SAVE AND CONTINUE"
-6. Add Scopes:
-   - Click "ADD OR REMOVE SCOPES"
-   - Search for "Gmail API"
-   - Select ".../auth/gmail.modify" scope
-   - Click "UPDATE"
-   - Click "SAVE AND CONTINUE"
-7. Add Test Users (required for External apps):
-   - Click "ADD USERS"
-   - Enter your Gmail address
-   - Click "ADD"
-   - Click "SAVE AND CONTINUE"
-8. Review summary and click "BACK TO DASHBOARD"
+**Option C: Anthropic (Cloud, Paid)**
+- Get API key: https://console.anthropic.com/settings/keys
+- Paste in "Anthropic API Key" field  
+- Set "LLM Provider" to: `anthropic` or `auto`
 
-**Step 4: Create OAuth Client ID Credentials**
-1. Go to "APIs &amp; Services" → "Credentials"
-2. Click "+ CREATE CREDENTIALS" at top
-3. Select "OAuth client ID"
-4. Application type: **Desktop app**
-5. Name: "Executive AI Assistant Desktop Client"
-6. Click "CREATE"
-7. In the popup, click "DOWNLOAD JSON"
-8. Save as `client_secret.json` (remember the location!)
-9. Click "OK" to close the dialog
+**💡 Recommended:** Set "LLM Provider" to `auto` - it will use whichever provider you configured.
 
-**Step 5: Generate OAuth Token**
-Run this command in Unraid terminal (replace /path/to/client_secret.json):
-
-```bash
-docker run --rm -it \
-  -v /path/to/client_secret.json:/app/client_secret.json \
-  ghcr.io/ryan-haver/executive-ai-assistant:latest \
-  python /app/scripts/setup_gmail.py
-```
-
-This will:
-- Display a URL - copy it and paste in your browser
-- You'll be asked to sign in to Google and authorize the app
-- After authorization, copy the code from browser
-- Paste it back in the terminal
-- The script will save your token
-
-**Step 6: Encode Credentials for Unraid**
-After token generation, run these commands to get base64-encoded values:
-
-```bash
-# Encode client secret
-base64 -w 0 /path/to/client_secret.json
-
-# Encode token (created in Step 5)
-base64 -w 0 /path/to/token.json
-```
-
-Copy these base64 strings and paste them into the "Gmail Client Secret" and "Gmail OAuth Token" fields below.
-
-**QUICK START GUIDE:**
-
-**Option 1: Free Local AI (Ollama)**
-1. Install Ollama container from Community Apps
-2. Pull a model: `docker exec ollama ollama pull llama3.2:3b`
-3. Set LLM Provider to: "ollama"
-4. Set Ollama Host to: "http://YOUR_UNRAID_IP:11434"
-5. Configure Gmail OAuth (see above)
-6. Start the container
-
-**Option 2: Cloud AI (OpenAI)**
-1. Get API key from: https://platform.openai.com/api-keys
-2. Set LLM Provider to: "openai"
-3. Paste your API key in "OpenAI API Key" field
-4. Configure Gmail OAuth (see above)
-5. Start the container
-
-**Option 3: Hybrid Mode (Recommended)**
-1. Set up both Ollama and OpenAI/Anthropic
-2. Set LLM Provider to: "hybrid"
-3. Container uses Ollama when available, falls back to cloud
-4. Best of both worlds: free + reliable
+---
 
 **ACCESSING THE ASSISTANT:**
-- Setup UI: http://YOUR_UNRAID_IP:2025/setup (for OAuth configuration)
-- LangGraph API: http://YOUR_UNRAID_IP:2024 (main API and web interface)
-- LangGraph Studio: Connect to http://YOUR_UNRAID_IP:2024
-- Agent Inbox: Install separate Agent Inbox container for GUI
 
-**FIRST-TIME SETUP:**
-1. Start the container
-2. Visit http://YOUR_UNRAID_IP:2025/setup in your browser
-3. Upload your client_secret.json file
-4. Complete the OAuth authorization flow
-5. Container will automatically start processing emails
+- **Setup UI:** http://YOUR-UNRAID-IP:2025/setup (for OAuth setup only)
+- **LangGraph API:** http://YOUR-UNRAID-IP:2024 (for LangGraph Studio)
+- **Agent Inbox UI:** Install separate Agent-Inbox container for web interface
 
-**CRON SCHEDULING:**
-By default, the assistant checks for new emails every 5 minutes. You can customize this:
-- Every 15 minutes: "*/15 * * * *"
-- Every hour: "0 * * * *"
-- 9am-5pm weekdays: "0 9-17 * * 1-5"
+---
 
-**TROUBLESHOOTING:**
+**ADVANCED OPTIONS:**
+
+**Custom Models:** In "Show more settings", you can customize which models are used for each task (triage, drafting, etc.)
+
+**Reverse Proxy:** If you have a public domain:
+- Set USE_LOCALHOST_OAUTH to `false`
+- Use Web app OAuth credentials instead of Desktop app
+- Set SETUP_UI_BASE_URL to your public URL
+
+**Troubleshooting:** Check container logs for errors. Most issues are due to missing LLM provider or incorrect OAuth setup.
 
 **Container won't start / Health check failing:**
 - Check logs: `docker logs executive-ai-assistant`
@@ -292,6 +214,39 @@ For detailed documentation, visit: https://github.com/ryan-haver/executive-ai-as
   
   <Config Name="Anthropic API Key" Target="ANTHROPIC_API_KEY" Default="" Mode="" Description="Anthropic API key (if using Claude). Get from: https://console.anthropic.com/settings/keys. Format: sk-ant-..." Type="Variable" Display="always" Required="false" Mask="true"/>
   
+  <!-- Ollama Model Configuration -->
+  <Config Name="Ollama Triage Model" Target="OLLAMA_MODEL_TRIAGE" Default="llama3.2:3b" Mode="" Description="Ollama model for email triage/classification. Default: llama3.2:3b (fast, lightweight). Other options: llama3.1:8b, qwen2.5:3b" Type="Variable" Display="advanced" Required="false" Mask="false">llama3.2:3b</Config>
+  
+  <Config Name="Ollama Draft Model" Target="OLLAMA_MODEL_DRAFT" Default="llama3.1:8b" Mode="" Description="Ollama model for drafting email responses. Default: llama3.1:8b (balanced). Other options: llama3.1:70b (better quality), llama3.2:3b (faster)" Type="Variable" Display="advanced" Required="false" Mask="false">llama3.1:8b</Config>
+  
+  <Config Name="Ollama Rewrite Model" Target="OLLAMA_MODEL_REWRITE" Default="llama3.1:8b" Mode="" Description="Ollama model for rewriting/tone adjustment. Default: llama3.1:8b. Other options: llama3.1:70b (better), llama3.2:3b (faster)" Type="Variable" Display="advanced" Required="false" Mask="false">llama3.1:8b</Config>
+  
+  <Config Name="Ollama Schedule Model" Target="OLLAMA_MODEL_SCHEDULE" Default="llama3.1:8b" Mode="" Description="Ollama model for calendar/scheduling logic. Default: llama3.1:8b. Other options: llama3.1:70b (better reasoning)" Type="Variable" Display="advanced" Required="false" Mask="false">llama3.1:8b</Config>
+  
+  <Config Name="Ollama Reflect Model" Target="OLLAMA_MODEL_REFLECT" Default="llama3.1:70b" Mode="" Description="Ollama model for reflection/learning. Default: llama3.1:70b (high quality). Warning: 70b models require significant RAM (40GB+)" Type="Variable" Display="advanced" Required="false" Mask="false">llama3.1:70b</Config>
+  
+  <!-- OpenAI Model Configuration -->
+  <Config Name="OpenAI Triage Model" Target="OPENAI_MODEL_TRIAGE" Default="gpt-4o-mini" Mode="" Description="OpenAI model for triage. Default: gpt-4o-mini (fast, cheap). Other options: gpt-4o, gpt-3.5-turbo" Type="Variable" Display="advanced" Required="false" Mask="false">gpt-4o-mini</Config>
+  
+  <Config Name="OpenAI Draft Model" Target="OPENAI_MODEL_DRAFT" Default="gpt-4o" Mode="" Description="OpenAI model for drafting. Default: gpt-4o (high quality). Other options: gpt-4o-mini (cheaper), o1-mini" Type="Variable" Display="advanced" Required="false" Mask="false">gpt-4o</Config>
+  
+  <Config Name="OpenAI Rewrite Model" Target="OPENAI_MODEL_REWRITE" Default="gpt-4o" Mode="" Description="OpenAI model for rewriting. Default: gpt-4o. Other options: gpt-4o-mini" Type="Variable" Display="advanced" Required="false" Mask="false">gpt-4o</Config>
+  
+  <Config Name="OpenAI Schedule Model" Target="OPENAI_MODEL_SCHEDULE" Default="gpt-4o" Mode="" Description="OpenAI model for scheduling. Default: gpt-4o. Other options: o1, o1-mini (better reasoning)" Type="Variable" Display="advanced" Required="false" Mask="false">gpt-4o</Config>
+  
+  <Config Name="OpenAI Reflect Model" Target="OPENAI_MODEL_REFLECT" Default="o1" Mode="" Description="OpenAI model for reflection. Default: o1 (best reasoning). Other options: gpt-4o, o1-mini" Type="Variable" Display="advanced" Required="false" Mask="false">o1</Config>
+  
+  <!-- Anthropic Model Configuration -->
+  <Config Name="Anthropic Triage Model" Target="ANTHROPIC_MODEL_TRIAGE" Default="claude-3-haiku-20240307" Mode="" Description="Anthropic model for triage. Default: claude-3-haiku (fast). Other options: claude-3-5-sonnet-latest" Type="Variable" Display="advanced" Required="false" Mask="false">claude-3-haiku-20240307</Config>
+  
+  <Config Name="Anthropic Draft Model" Target="ANTHROPIC_MODEL_DRAFT" Default="claude-3-5-sonnet-latest" Mode="" Description="Anthropic model for drafting. Default: claude-3-5-sonnet-latest (high quality). Other options: claude-3-haiku-20240307 (cheaper)" Type="Variable" Display="advanced" Required="false" Mask="false">claude-3-5-sonnet-latest</Config>
+  
+  <Config Name="Anthropic Rewrite Model" Target="ANTHROPIC_MODEL_REWRITE" Default="claude-3-5-sonnet-latest" Mode="" Description="Anthropic model for rewriting. Default: claude-3-5-sonnet-latest. Other options: claude-3-haiku-20240307" Type="Variable" Display="advanced" Required="false" Mask="false">claude-3-5-sonnet-latest</Config>
+  
+  <Config Name="Anthropic Schedule Model" Target="ANTHROPIC_MODEL_SCHEDULE" Default="claude-3-5-sonnet-latest" Mode="" Description="Anthropic model for scheduling. Default: claude-3-5-sonnet-latest" Type="Variable" Display="advanced" Required="false" Mask="false">claude-3-5-sonnet-latest</Config>
+  
+  <Config Name="Anthropic Reflect Model" Target="ANTHROPIC_MODEL_REFLECT" Default="claude-3-5-sonnet-latest" Mode="" Description="Anthropic model for reflection. Default: claude-3-5-sonnet-latest" Type="Variable" Display="advanced" Required="false" Mask="false">claude-3-5-sonnet-latest</Config>
+  
   <!-- Cron Configuration -->
   <Config Name="Cron Schedule" Target="CRON_SCHEDULE" Default="*/5 * * * *" Mode="" Description="How often to check for new emails (cron format). Default: */5 * * * * (every 5 minutes). Examples: */15 * * * * (every 15 min), 0 * * * * (hourly), 0 9-17 * * 1-5 (9am-5pm weekdays)" Type="Variable" Display="always" Required="false" Mask="false">*/5 * * * *</Config>
   
@@ -308,6 +263,9 @@ For detailed documentation, visit: https://github.com/ryan-haver/executive-ai-as
   
   <!-- Optional Advanced Configuration -->
   <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Container timezone (affects cron schedule). Examples: America/New_York, America/Chicago, America/Los_Angeles, Europe/London, UTC" Type="Variable" Display="advanced" Required="false" Mask="false">America/New_York</Config>
+  
+  <!-- OAuth Configuration for Private Networks -->
+  <Config Name="Use Desktop App OAuth" Target="USE_LOCALHOST_OAUTH" Default="true" Mode="" Description="OAuth mode: 'true' = Desktop app with localhost redirect (default, works on private networks with SSH port forwarding). 'false' = Web app with public domain redirect (requires reverse proxy and public domain). Most users should leave this as 'true'." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
   
   <!-- Reverse Proxy Configuration -->
   <Config Name="Setup UI Base URL" Target="SETUP_UI_BASE_URL" Default="" Mode="" Description="REVERSE PROXY ONLY: Public URL for OAuth callbacks when behind reverse proxy. Example: https://setup.example.com or https://assistant.example.com/setup. Leave empty for direct access (automatically detected). Required if proxy doesn't forward X-Forwarded-* headers correctly." Type="Variable" Display="advanced" Required="false" Mask="false"/>
