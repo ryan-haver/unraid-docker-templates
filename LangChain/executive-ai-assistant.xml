@@ -41,11 +41,14 @@ This container monitors your Gmail and drafts responses. It requires one-time OA
 2. Create new project: "Executive AI Assistant"
 3. Enable Gmail API (APIs &amp; Services → Enable APIs)
 4. Configure OAuth consent screen:
-   - User type: **External**
+   - User type: **External** (required for personal Gmail)
    - App name: "Executive AI Assistant"
-   - Add your Gmail as test user
+   - Support email: Your email
+   - Scopes: Add Gmail API (https://www.googleapis.com/auth/gmail.modify)
+   - **IMPORTANT:** Click "PUBLISH APP" button (allows you to authorize without adding test users)
+   - Confirm publishing (you'll see an "unverified app" warning during OAuth - this is normal for personal apps)
 5. Create credentials (APIs &amp; Services → Credentials):
-   - Type: **Desktop app**
+   - Type: **OAuth client ID** → **Desktop app**
    - Name: "Executive AI Assistant"
    - Download JSON as `client_secret.json`
 
