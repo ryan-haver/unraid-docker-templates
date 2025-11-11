@@ -116,8 +116,8 @@ Configuration not saving:
   <!-- Port Configuration -->
   <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for accessing the web interface. Example: 3006 to access at http://YOUR_IP:3006. Container internal port is always 3000, but you can map to any external port. Container logs will display your mapped port for convenience." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   
-  <!-- Auto-populated helper for accurate logging -->
-  <Config Name="Host Port (Auto)" Target="HOST_PORT" Default="3000" Mode="" Description="Automatically matches your Web UI Port setting above for accurate container logs. Auto-populated - do not modify." Type="Variable" Display="advanced-hide" Required="false" Mask="false">[PORT:3000]</Config>
+  <!-- Auto-populated helper for accurate logging (references Web UI Port above) -->
+  <Config Name="Host Port (Auto)" Target="HOST_PORT" Default="3000" Mode="" Description="Automatically syncs with your Web UI Port setting above for accurate container logs. Auto-populated - do not modify." Type="Variable" Display="advanced-hide" Required="false" Mask="false">[Web UI Port]</Config>
   
   <!-- Reverse Proxy Configuration (Advanced) -->
   <Config Name="Base Path (Reverse Proxy)" Target="NEXT_PUBLIC_BASE_PATH" Default="" Mode="" Description="REVERSE PROXY ONLY: URL path prefix for subpath deployments. Example: /inbox serves UI at https://example.com/inbox/. Leave EMPTY for root domain (https://inbox.example.com/). WARNING: Requires container rebuild to change." Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
