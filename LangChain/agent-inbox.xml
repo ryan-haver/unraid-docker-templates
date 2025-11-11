@@ -9,323 +9,86 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/ryan-haver/agent-inbox</Support>
   <Project>https://github.com/langchain-ai/agent-inbox</Project>
-  <Overview>Agent Inbox - Modern web interface for interacting with LangGraph agents and the Executive AI Assistant.
+  <Overview>Agent Inbox - Modern web interface for managing LangGraph agents and the Executive AI Assistant.
 
-The Agent Inbox provides a beautiful, intuitive UI for managing human-in-the-loop interactions with your LangGraph agents. It's the perfect companion to the Executive AI Assistant, allowing you to review email drafts, approve actions, and provide feedback through an elegant web interface.
+Beautiful, intuitive UI for reviewing AI-drafted emails, approving agent actions, and managing human-in-the-loop workflows with your LangGraph agents.
 
-**KEY FEATURES:**
-- 🎨 Modern, intuitive web interface
-- 📧 Review and approve AI-drafted email responses
-- ✏️ Edit agent actions before execution
-- 💬 Respond to agent questions and interrupts
-- 🔄 Real-time updates from LangGraph deployments
-- 🎯 Multiple inbox support (manage different agents)
-- 🌐 Flexible storage: Browser-only (default) or optional server-side sync
-- 🔒 Secure browser-based configuration
-- 💾 Optional persistent storage for multi-device sync (NEW!)
+**QUICK START:**
+
+1. **Install Executive AI Assistant** (if you haven't already)
+   - Deploy from Community Apps
+   - Complete Gmail OAuth setup via http://YOUR_IP:2025/setup
+   - Verify running on port 2024
+
+2. **Install Agent Inbox**
+   - Set Web UI Port (default 3000, or use 3006)
+   - Click "Apply"
+   - Access at http://YOUR_UNRAID_IP:[YOUR_PORT]
+
+3. **Configure in Browser** (Settings in sidebar)
+   - Add LangSmith API key: https://smith.langchain.com/settings
+   - Create inbox: "Add Inbox" button
+   - Set Deployment URL: http://YOUR_UNRAID_IP:2024
+   - Set Assistant ID: email_assistant (check langgraph.json if different)
+   - Give it a name (e.g., "My Email Assistant")
+
+4. **Start Using**
+   - Review email drafts from Executive AI Assistant
+   - Edit and approve responses
+   - Manage agent interrupts and decisions
 
 **STORAGE OPTIONS:**
 
-**Option 1: Browser-Only (Default - Stateless)**
-- No volumes required - completely stateless
-- All configuration stored in browser local storage
-- No server-side secrets or API keys
-- Each user/browser configures independently
-- Clear browser data = reset configuration
+**Browser-Only (Default):**
+- ✅ Zero configuration - works immediately
+- ✅ No volumes needed - completely stateless
+- ✅ Maximum privacy - no server-side data
+- ⚠️ Config lost if browser cache cleared
+- ⚠️ Each device needs separate setup
 
-**Option 2: Server-Side Storage (Optional - NEW!)**
-- Enable with USE_SERVER_STORAGE=true
-- Requires volume mapping to /app/data
-- Configuration syncs between browsers/devices
-- Survives browser cache/cookie clear
-- Backup and restore capabilities via API
-- Backward compatible (can switch back to browser-only anytime)
+**Server-Side Storage (Optional):**
+- ✅ Multi-device sync (phone, tablet, laptop)
+- ✅ Survives browser cache clear
+- ✅ Pre-configure inboxes via environment variables
+- ⚠️ Requires volume mapping: /mnt/user/appdata/agent-inbox
+- ⚠️ Set "Enable Server Storage" to true
 
-**PERFECT FOR:**
-- Executive AI Assistant email management
-- Any LangGraph agent with human interrupts
-- Multi-agent workflow management
-- Development and testing of LangGraph apps
+**KEY FEATURES:**
+- 📧 Review and approve AI email drafts
+- ✏️ Edit agent responses before sending
+- 💬 Answer agent questions in real-time
+- 🎯 Manage multiple agents from one interface
+- 🔄 Real-time sync with LangGraph deployments
+- 💾 Optional persistent storage for multi-device use
 
-**QUICK START GUIDE:**
-
-**Step 1: Install Executive AI Assistant**
-The Agent Inbox requires a LangGraph deployment to connect to. If you haven't already:
-1. Install the "Executive AI Assistant" container from Community Apps
-2. Complete the Gmail OAuth setup
-3. Ensure it's running and accessible on port 2024
-
-**Step 2: Install Agent Inbox**
-1. Fill in the port (default: 3000, or choose your own like 3006)
-2. Click "Apply" to create the container
-3. Access the web UI at: http://YOUR_UNRAID_IP:[YOUR_CHOSEN_PORT]
-
-**NOTE:** Container logs will always show port 3000 (internal). Use YOUR mapped port to access the UI.
-
-**Step 3: Configure in Browser**
-After opening the web UI:
-
-1. **Add LangSmith API Key** (Settings icon in sidebar)
-   - Get your key from: https://smith.langchain.com/settings
-   - Click "Settings" → Enter your LangSmith API key
-   - This authenticates requests to LangGraph deployments
-
-2. **Create Your First Inbox** (Settings → "Add Inbox")
-   - Click the settings popover (bottom left in sidebar)
-   - Click "Add Inbox"
-   - Fill in three fields:
-
-**Required Fields:**
-- **Assistant/Graph ID**: The name of your LangGraph graph
-  - For Executive AI Assistant, use: "email_assistant" (or check langgraph.json)
-  - This tells the inbox which agent to connect to
-
-- **Deployment URL**: The URL of your LangGraph deployment
-  - For Unraid Executive AI Assistant: http://YOUR_UNRAID_IP:2024
-  - For container name: http://executive-ai-assistant:2024
-  - For LangGraph Cloud: https://your-deployment.langchain.com
-
-- **Name**: (Optional) A friendly name for this inbox
-  - Example: "My Email Assistant"
-  - Example: "Production Agent"
-  - This is just a label in the UI
-
-**Step 4: Start Using**
-- The inbox will automatically connect to your agent
-- When your Executive AI Assistant encounters an email, you'll see it in the inbox
-- Review the draft, edit if needed, and approve or respond
-- All changes sync immediately with the agent
-
-**CONNECTING TO EXECUTIVE AI ASSISTANT:**
-
-**Option 1: Using Unraid IP (Recommended)**
-- Deployment URL: `http://192.168.1.100:2024` (use your Unraid IP)
-- Works from any device on your network
-- Easy to remember and share
-
-**Option 2: Using Container Name (Advanced)**
-- Deployment URL: `http://executive-ai-assistant:2024`
-- Only works from containers on same Docker network
-- Requires custom network configuration
-
-**CONFIGURATION NOTES:**
-
-**💾 PERSISTENT STORAGE (Optional Feature):**
-
-By default, Agent Inbox is stateless and stores all configuration in your browser's localStorage. This works great for single-device use, but has limitations:
-- Configuration lost if you clear browser cache/cookies
-- Can't access same configuration from different devices/browsers
-- No built-in backup/restore capability
-
-**Enable Server-Side Storage:**
-
-To enable optional persistent storage:
-
-1. **Configure Volume Mapping:**
-   - Set "Config Storage Path" to: `/mnt/user/appdata/agent-inbox`
-   - This creates a folder on your Unraid server to store config.json
-
-2. **Enable Server Storage:**
-   - Set "Enable Server Storage" to: `true`
-   - This activates the server-side sync feature
-
-3. **Benefits:**
-   - ✅ Access same configuration from any browser/device
-   - ✅ Configuration survives browser cache clear
-   - ✅ Automatic sync every 30 seconds
-   - ✅ Backup/restore via API
-   - ✅ Pre-configure inboxes via environment variables
-   - ✅ Can still work offline (falls back to browser localStorage)
-
-4. **Backward Compatible:**
-   - Existing browser configuration automatically syncs to server on first load
-   - Can disable server storage anytime and revert to browser-only mode
-   - No breaking changes - container works with or without volumes
-
-**When to Use Server Storage:**
-- ✅ Multiple devices (access inbox from phone, tablet, laptop)
-- ✅ Shared configuration (team members use same inboxes)
-- ✅ Protection against browser data loss
-- ✅ Backup and disaster recovery
-- ✅ Pre-configuration for new users
-
-**When to Keep Browser-Only:**
-- ✅ Single device usage
-- ✅ Privacy concerns (no server-side data)
-- ✅ Minimal setup (no volumes to manage)
-- ✅ Temporary/testing deployments
-
-**⚠️ CRITICAL - Browser Data Warning (Browser-Only Mode):**
-- **DO NOT clear browser cache/cookies** for the Agent Inbox domain
-- Clearing browser data will **DELETE ALL your configuration**
-- This includes: LangSmith key, inbox settings, deployment URLs
-- No server-side backup exists - all config lives in browser only
-
-**How to Backup Configuration (Recommended):**
-1. Open browser DevTools (F12)
-2. Application tab → Local Storage → Your domain
-3. Right-click → Copy all key-value pairs
-4. Save to a text file securely
-5. To restore: Paste back before first use after clearing data
-
-**Browser Local Storage:**
-- LangSmith API key stored in browser
-- Inbox configurations stored in browser
-- Settings persist across container restarts
-- Each browser/device needs separate configuration
-
-**Multiple Inboxes:**
-- You can create multiple inboxes for different agents
-- Switch between them using the sidebar
-- Each inbox connects to a different LangGraph deployment
-
-**No Data Persistence:**
-- Container is completely stateless
-- No volumes, no local storage, no databases
-- All state lives in your browser
-- Container restarts won't affect your configuration
+**CRITICAL NOTES:**
+- Configuration stored in BROWSER only (unless server storage enabled)
+- Clearing browser cache/cookies DELETES all your configuration
+- To backup: F12 → Application → Local Storage → Copy values
+- Container logs show port 3000 (internal) - use YOUR mapped port to access
 
 **TROUBLESHOOTING:**
 
-**Can't Connect to Executive AI Assistant:**
-1. Verify Executive AI Assistant is running:
-   ```
-   docker ps | grep executive-ai-assistant
-   ```
+Can't connect to Executive AI Assistant:
+- Verify it's running: docker ps | grep executive-ai-assistant
+- Test in browser: http://YOUR_UNRAID_IP:2024 (should see JSON)
+- Use Unraid IP, not localhost or container name
+- Format: http://IP:2024 (no trailing slash)
 
-2. Test the connection from your browser:
-   - Open: http://YOUR_UNRAID_IP:2024
-   - Should see a JSON response or LangGraph page
+No interrupts appearing:
+- Check Executive AI logs: docker logs executive-ai-assistant
+- Verify Gmail OAuth configured correctly
+- Check graph ID matches langgraph.json (usually email_assistant)
 
-3. Check the Deployment URL in Agent Inbox:
-   - Must use Unraid IP, not localhost
-   - Port must be 2024 (default)
-   - Format: http://IP:PORT (no trailing slash)
-
-4. Verify LangSmith API key:
-   - Must be valid and active
-   - Get from: https://smith.langchain.com/settings
-   - Re-enter if unsure
-
-**No Interrupts Appearing:**
-1. Check Executive AI Assistant logs:
-   ```
-   docker logs executive-ai-assistant
-   ```
-
-2. Verify email ingestion is working:
-   - Check cron logs in Executive AI Assistant
-   - Ensure Gmail OAuth is configured correctly
-
-3. Confirm graph/assistant ID:
-   - Should match the ID in langgraph.json
-   - Usually "email_assistant" for Executive AI Assistant
-
-**Configuration Not Saving:**
-- Configuration is saved in browser local storage
-- Check browser console for errors (F12)
-- Ensure cookies/local storage are enabled
-- DO NOT clear browser data for this domain (you'll lose all config!)
-
-**⚠️ IMPORTANT - Configuration Backup:**
-- All configuration is stored in BROWSER local storage only
-- Clearing browser cache/cookies will DELETE your configuration
-- You'll need to re-enter LangSmith key and recreate all inboxes
-- To backup configuration:
-  1. Open browser DevTools (F12)
-  2. Go to Application → Local Storage
-  3. Find your domain and export the data
-  4. Save it securely
-- To restore: Re-import the data in DevTools before first use
-
-**Page Won't Load:**
-1. Check container logs:
-   ```
-   docker logs agent-inbox
-   ```
-
-2. Verify port 3000 is not in use:
-   ```
-   netstat -an | grep 3000
-   ```
-
-3. Try restarting the container:
-   ```
-   docker restart agent-inbox
-   ```
-
-**RESOURCE REQUIREMENTS:**
-- CPU: 0.25-1.0 cores (minimal usage)
-- RAM: 128MB-512MB (lightweight Next.js app)
-- Disk: ~300MB (container image)
-- Network: Internet access for LangSmith API
-
-**INTEGRATION WITH EXECUTIVE AI ASSISTANT:**
-
-This container is designed to work seamlessly with the Executive AI Assistant:
-
-1. **Email Review Workflow:**
-   - Executive AI Assistant receives email
-   - AI drafts response and creates interrupt
-   - Interrupt appears in Agent Inbox
-   - You review, edit, and approve
-   - Email sent with your approval
-
-2. **Human-in-the-Loop:**
-   - Agent encounters decision point
-   - Sends interrupt to Agent Inbox
-   - You provide guidance or make choice
-   - Agent continues with your input
-
-3. **Multi-Agent Support:**
-   - Create separate inboxes for different agents
-   - Manage email assistant, calendar agent, research agent, etc.
-   - Switch between inboxes in sidebar
-
-**SECURITY NOTES:**
-- No secrets stored in container
-- All authentication in browser local storage
-- Stateless design = no data at rest
-- Non-root user (nextjs, UID 1001)
-- Minimal Alpine Linux base
-- No telemetry or tracking
-
-**USEFUL COMMANDS:**
-
-**View Logs:**
-```bash
-docker logs agent-inbox
-```
-
-**Restart Container:**
-```bash
-docker restart agent-inbox
-```
-
-**Check Health:**
-```bash
-docker inspect agent-inbox | grep Health -A 10
-```
-
-**Test Connection:**
-```bash
-curl http://localhost:3000
-```
-
-**DOCKER IMAGE DETAILS:**
-- Base: node:20-alpine (minimal footprint)
-- Size: 266MB
-- Build: Multi-stage optimized
-- User: nextjs (non-root)
-- Health Check: Automatic HTTP verification
+Configuration not saving:
+- Enable cookies/local storage in browser
+- Check browser console (F12) for errors
+- Don't clear browser data for this domain
 
 **LINKS:**
-- **Agent Inbox GitHub**: https://github.com/langchain-ai/agent-inbox
-- **LangGraph Docs**: https://langchain-ai.github.io/langgraph/
-- **LangSmith**: https://smith.langchain.com/
-- **Docker Hub**: https://hub.docker.com/r/ryan-haver/agent-inbox
-
-For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</Overview>
+- LangSmith API Keys: https://smith.langchain.com/settings
+- GitHub: https://github.com/langchain-ai/agent-inbox
+- LangGraph Docs: https://langchain-ai.github.io/langgraph/</Overview>
   <Category>Productivity: Tools:</Category>
   <WebUI>http://[IP]:[PORT:3000]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/ryan-haver/unraid-docker-templates/main/LangChain/agent-inbox.xml</TemplateURL>
@@ -351,51 +114,46 @@ For detailed documentation, visit: https://github.com/langchain-ai/agent-inbox</
   <Labels/>
   
   <!-- Port Configuration -->
-  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for Agent Inbox web interface. Map this to your desired host port (e.g., 3006). Container logs will show your mapped port." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  <Config Name="Web UI Port" Target="3000" Default="3000" Mode="tcp" Description="Port for accessing the web interface. Example: 3006 to access at http://YOUR_IP:3006. Container internal port is always 3000, but you can map to any external port. Container logs will display your mapped port for convenience." Type="Port" Display="always" Required="true" Mask="false">3000</Config>
   
   <!-- Optional Environment Variables -->
-  <Config Name="Host Port" Target="HOST_PORT" Default="" Mode="" Description="Host port mapping for accurate logging. Set this to match your 'Web UI Port' above (e.g., if you set Web UI Port to 3006, set this to 3006). Helps container logs show the correct access URL." Type="Variable" Display="always" Required="false" Mask="false"/>
+  <Config Name="Host Port (Optional)" Target="HOST_PORT" Default="" Mode="" Description="OPTIONAL: Override for log messages. Set to match 'Web UI Port' above for accurate startup logs. Example: If Web UI Port is 3006, set this to 3006. Auto-detected if left empty. Only affects log display, not functionality." Type="Variable" Display="advanced" Required="false" Mask="false"/>
   
-  <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Node.js environment (production recommended)" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
+  <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Runtime environment mode. Use 'production' for normal operation (optimized, faster). Use 'development' only for debugging (slower, verbose logging). Default: production" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
   
-  <Config Name="Disable Telemetry" Target="NEXT_TELEMETRY_DISABLED" Default="1" Mode="" Description="Disable Next.js telemetry (1=disabled, 0=enabled)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
+  <Config Name="Disable Telemetry" Target="NEXT_TELEMETRY_DISABLED" Default="1" Mode="" Description="Controls Next.js anonymous usage statistics. Set to 1 to disable telemetry (recommended for privacy). Set to 0 to help Next.js team with anonymous metrics. Default: 1 (disabled)" Type="Variable" Display="advanced" Required="false" Mask="false">1</Config>
   
   <!-- Reverse Proxy Configuration -->
-  <Config Name="LangGraph API URL (Optional)" Target="NEXT_PUBLIC_LANGGRAPH_API_URL" Default="" Mode="" Description="OPTIONAL: Pre-configure LangGraph API URL. Example: https://api.example.com or http://executive-ai-assistant:2024. Leave empty to configure manually in browser UI (recommended). Note: This is a build-time variable, container rebuild required for changes." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="LangGraph API URL (Build-Time)" Target="NEXT_PUBLIC_LANGGRAPH_API_URL" Default="" Mode="" Description="ADVANCED: Hard-code LangGraph API URL at build time. Example: http://192.168.1.110:2024. Leave EMPTY (recommended) to configure in browser UI instead. WARNING: Requires container rebuild to change - not runtime configurable." Type="Variable" Display="advanced" Required="false" Mask="false"/>
   
-  <Config Name="Base Path (Subpath Only)" Target="NEXT_PUBLIC_BASE_PATH" Default="" Mode="" Description="REVERSE PROXY ONLY: Base path for subpath deployments. Example: /inbox for https://example.com/inbox/. Leave empty for root domain deployment like https://inbox.example.com/ (recommended). Note: Requires container rebuild to change." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Base Path (Reverse Proxy)" Target="NEXT_PUBLIC_BASE_PATH" Default="" Mode="" Description="REVERSE PROXY ONLY: URL path prefix for subpath deployments. Example: /inbox serves UI at https://example.com/inbox/. Leave EMPTY for root domain (https://inbox.example.com/). WARNING: Requires container rebuild to change." Type="Variable" Display="advanced" Required="false" Mask="false"/>
   
   <!-- ========================================================================= -->
   <!-- PERSISTENT STORAGE CONFIGURATION (Optional Feature)                      -->
   <!-- ========================================================================= -->
-  <!-- Enable optional server-side configuration storage for multi-device sync   -->
-  <!-- and backup/restore capabilities. By default, Agent Inbox uses browser     -->
-  <!-- localStorage only (stateless). Enabling this feature allows:              -->
-  <!--   - Configuration sync across multiple devices/browsers                   -->
-  <!--   - Survives browser cache/cookie clear                                   -->
-  <!--   - Backup and restore via API                                            -->
-  <!--   - Pre-configuration via environment variables                           -->
+  <!-- By default, Agent Inbox stores everything in BROWSER localStorage only.  -->
+  <!-- Enable server storage for multi-device sync and backup capabilities.     -->
   <!-- ========================================================================= -->
   
-  <Config Name="Enable Server Storage" Target="USE_SERVER_STORAGE" Default="false" Mode="" Description="OPTIONAL: Enable server-side configuration storage. When enabled, configuration syncs between browser and server, allowing multi-device access and protection against browser data loss. Requires 'Config Storage Path' volume to be configured below. Default: false (browser localStorage only)." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Enable Server Storage" Target="USE_SERVER_STORAGE" Default="false" Mode="" Description="Enable server-side configuration sync. When true, configuration syncs between browser and /app/data/config.json, allowing multi-device access and surviving browser cache clears. Requires 'Config Storage Path' volume below. Example: true for multi-device, false for browser-only. Default: false" Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
   
-  <Config Name="Config File Path" Target="CONFIG_FILE_PATH" Default="/app/data/config.json" Mode="" Description="ADVANCED: Custom path for configuration file. Only used when 'Enable Server Storage' is true. Default: /app/data/config.json" Type="Variable" Display="advanced-hide" Required="false" Mask="false">/app/data/config.json</Config>
+  <Config Name="Config File Path (Advanced)" Target="CONFIG_FILE_PATH" Default="/app/data/config.json" Mode="" Description="ADVANCED: Custom location for config file inside container. Only change if using custom volume mount points. Must be writable path inside container. Default: /app/data/config.json (maps to your 'Config Storage Path' volume)" Type="Variable" Display="advanced-hide" Required="false" Mask="false">/app/data/config.json</Config>
   
   <!-- Pre-configuration via Environment Variables (Optional) -->
-  <Config Name="Pre-configure Default Inbox" Target="DEFAULT_INBOX_ENABLED" Default="false" Mode="" Description="ADVANCED: Auto-create a default inbox from environment variables on first run. Requires setting DEFAULT_INBOX_NAME, DEFAULT_DEPLOYMENT_URL, and DEFAULT_ASSISTANT_ID below. Only works when server storage is enabled. Default: false" Type="Variable" Display="advanced-hide" Required="false" Mask="false">false</Config>
+  <Config Name="Auto-Create Default Inbox" Target="DEFAULT_INBOX_ENABLED" Default="false" Mode="" Description="ADVANCED: Automatically create pre-configured inbox on first launch. Useful for deployment automation or shared setups. Requires DEFAULT_INBOX_NAME, DEFAULT_DEPLOYMENT_URL, and DEFAULT_ASSISTANT_ID below. Only works when server storage enabled. Example: true. Default: false" Type="Variable" Display="advanced-hide" Required="false" Mask="false">false</Config>
   
-  <Config Name="Default Inbox Name" Target="DEFAULT_INBOX_NAME" Default="Default Inbox" Mode="" Description="ADVANCED: Name for auto-created default inbox. Only used when 'Pre-configure Default Inbox' is true." Type="Variable" Display="advanced-hide" Required="false" Mask="false">Default Inbox</Config>
+  <Config Name="Default Inbox Name" Target="DEFAULT_INBOX_NAME" Default="Default Inbox" Mode="" Description="Display name for auto-created inbox. Example: 'My Email Assistant' or 'Production Agent'. Only used when 'Auto-Create Default Inbox' is true. Default: Default Inbox" Type="Variable" Display="advanced-hide" Required="false" Mask="false">Default Inbox</Config>
   
-  <Config Name="Default Deployment URL" Target="DEFAULT_DEPLOYMENT_URL" Default="" Mode="" Description="ADVANCED: Deployment URL for auto-created default inbox. Example: http://executive-ai-assistant:2024. Only used when 'Pre-configure Default Inbox' is true." Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
+  <Config Name="Default Deployment URL" Target="DEFAULT_DEPLOYMENT_URL" Default="" Mode="" Description="LangGraph API URL for auto-created inbox. Example: http://192.168.1.110:2024 or http://executive-ai-assistant:2024. Must be accessible from browser. Only used when 'Auto-Create Default Inbox' is true. Default: (empty)" Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
   
-  <Config Name="Default Assistant ID" Target="DEFAULT_ASSISTANT_ID" Default="email_assistant" Mode="" Description="ADVANCED: Assistant/Graph ID for auto-created default inbox. Usually 'email_assistant' for Executive AI Assistant. Only used when 'Pre-configure Default Inbox' is true." Type="Variable" Display="advanced-hide" Required="false" Mask="false">email_assistant</Config>
+  <Config Name="Default Assistant/Graph ID" Target="DEFAULT_ASSISTANT_ID" Default="email_assistant" Mode="" Description="Graph name from langgraph.json for auto-created inbox. Example: 'email_assistant' (Executive AI), 'main', or 'cron'. Check your LangGraph deployment's langgraph.json. Only used when 'Auto-Create Default Inbox' is true. Default: email_assistant" Type="Variable" Display="advanced-hide" Required="false" Mask="false">email_assistant</Config>
   
-  <Config Name="Additional Inboxes (JSON)" Target="ADDITIONAL_INBOXES" Default="" Mode="" Description="ADVANCED: Additional inboxes to pre-configure as JSON array. Example: [{'id':'inbox2','name':'Second Inbox','deploymentUrl':'http://other:2024','assistantId':'agent'}]. Only used when server storage is enabled." Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
+  <Config Name="Additional Inboxes (JSON Array)" Target="ADDITIONAL_INBOXES" Default="" Mode="" Description="ADVANCED: Pre-configure multiple inboxes via JSON array. Example: [{'id':'inbox2','name':'Calendar Agent','deploymentUrl':'http://192.168.1.110:2025','assistantId':'calendar'}]. Only used when server storage enabled. Requires valid JSON syntax. Default: (empty)" Type="Variable" Display="advanced-hide" Required="false" Mask="false"/>
   
-  <Config Name="Pre-configure LangSmith API Key" Target="LANGSMITH_API_KEY" Default="" Mode="" Description="ADVANCED: Pre-configure LangSmith API key via environment variable. Get your key from https://smith.langchain.com/settings. Only used when server storage is enabled. Recommended to configure in browser UI instead for better security." Type="Variable" Display="advanced-hide" Required="false" Mask="true"/>
+  <Config Name="Pre-Configure LangSmith Key" Target="LANGSMITH_API_KEY" Default="" Mode="" Description="ADVANCED: Pre-populate LangSmith API key via environment variable. Get from https://smith.langchain.com/settings (starts with lsv2_pt_). Only used when server storage enabled. WARNING: Less secure than browser UI entry - use for automation only. Default: (empty, configure in UI)" Type="Variable" Display="advanced-hide" Required="false" Mask="true"/>
   
   <!-- Persistent Storage Volume (Optional) -->
-  <Config Name="Config Storage Path" Target="/app/data" Default="" Mode="rw" Description="OPTIONAL: Host path for persistent configuration storage. Example: /mnt/user/appdata/agent-inbox. Leave empty to use browser localStorage only (default stateless mode). Required when 'Enable Server Storage' is true. Configuration will be stored in config.json in this directory." Type="Path" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Config Storage Path (Optional)" Target="/app/data" Default="" Mode="rw" Description="OPTIONAL: Host directory for persistent config.json storage. Example: /mnt/user/appdata/agent-inbox. Leave EMPTY for browser-only mode (default, stateless). Required when 'Enable Server Storage' is true. Config syncs here for backup/multi-device access." Type="Path" Display="advanced" Required="false" Mask="false"/>
   
   <!-- Note: Configuration done in browser UI, not via environment variables -->
 </Container>
